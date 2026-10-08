@@ -1,21 +1,22 @@
 let state = {
     heat: 0n,
     totalHeatEarned: 0n,
-    clickPower: 1n,
     biomassMultiplier: 1n,
     mutationPoints: 0n,
     unlockedSkills: [],
     storyIndex: 0,
     upgrades: {
-        bacteria: { count: 0n, cost: 50n, output: 2n },
-        tubeWorms: { count: 0n, cost: 500n, output: 15n },
-        vent: { count: 0n, cost: 5000n, output: 150n },
-        magma: { count: 0n, cost: 50000n, output: 2000n }
+        // baseTime is in milliseconds. 
+        bacteria: { count: 1n, cost: 50n, baseOutput: 2n, baseTime: 1000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
+        tubeWorms: { count: 0n, cost: 500n, baseOutput: 15n, baseTime: 3000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
+        vent: { count: 0n, cost: 5000n, baseOutput: 150n, baseTime: 10000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 250000n },
+        magma: { count: 0n, cost: 50000n, baseOutput: 2000n, baseTime: 30000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
     }
 };
 
 let surgeActive = false;
 let surgeCooldown = 0;
+let lastTick = Date.now();
 
 const storyMilestones = [
     { threshold: 0n, text: "A spark in the dark. The water is freezing, but the rock is warm. Grow." },
@@ -25,42 +26,32 @@ const storyMilestones = [
 ];
 
 const skillNodes = {
-    "double_click": { cost: 1n, requires: [] },
-    "heat_efficiency": { cost: 2n, requires: ["double_click"] },
-    "cheaper_bacteria": { cost: 3n, requires: ["double_click"] }
+    "heat_efficiency": { cost: 2n, requires: [] },
+    "cheaper_bacteria": { cost: 3n, requires: [] }
 };
 
 function activateSurge() {
     if (surgeCooldown <= 0) {
         surgeActive = true;
-        surgeCooldown = 60; // 60 seconds cooldown
-        
+        surgeCooldown = 60;
         setTimeout(() => {
             surgeActive = false;
             updateUI();
-        }, 10000); // Ability lasts 10 seconds
-        
+        }, 10000);
         updateUI();
     }
 }
 
-function generateHeatClick(event) {
-    let currentClick = state.clickPower;
-    if (state.unlockedSkills.includes("double_click")) {
-        currentClick *= 2n;
+function triggerCycle(key, event) {
+    let upg = state.upgrades[key];
+    if (upg.count > 0n && !upg.isRunning) {
+        upg.isRunning = true;
+        upg.timeRemaining = upg.baseTime;
+        
+        if (event) {
+            spawnFloatingText(event, "Running!");
+        }
     }
-    
-    let multiplier = state.biomassMultiplier;
-    if (surgeActive) multiplier *= 5n;
-    
-    const generated = currentClick * multiplier;
-    state.heat += generated;
-    state.totalHeatEarned += generated;
-    
-    if (event) {
-        spawnFloatingText(event, "+" + generated.toString());
-    }
-    updateUI();
 }
 
 function spawnFloatingText(event, text) {
@@ -73,18 +64,21 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
-function calculatePassiveHeat() {
-    let passive = 0n;
-    passive += state.upgrades.bacteria.count * state.upgrades.bacteria.output;
-    passive += state.upgrades.tubeWorms.count * state.upgrades.tubeWorms.output;
-    passive += state.upgrades.vent.count * state.upgrades.vent.output;
-    passive += state.upgrades.magma.count * state.upgrades.magma.output;
+function calculatePayout(key) {
+    let upg = state.upgrades[key];
+    if (upg.count === 0n) return 0n;
+
+    let multiplier = 1n;
     
-    let multiplier = state.biomassMultiplier;
+    // 3x multiplier applies cumulatively every 10 levels
+    let milestoneMultiplier = 3n ** (upg.count / 10n);
+    multiplier *= milestoneMultiplier;
+    multiplier *= state.biomassMultiplier;
+    
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
-    if (surgeActive) multiplier *= 5n; // Surge multiplies passive income too
+    if (surgeActive) multiplier *= 5n;
     
-    return passive * multiplier;
+    return upg.count * upg.baseOutput * multiplier;
 }
 
 function getUpgradeCost(key) {
@@ -95,22 +89,28 @@ function getUpgradeCost(key) {
     return cost;
 }
 
-function buyUpgrade(upgradeKey) {
-    let currentCost = getUpgradeCost(upgradeKey);
-
+function buyUpgrade(key) {
+    let currentCost = getUpgradeCost(key);
     if (state.heat >= currentCost) {
         state.heat -= currentCost;
-        let upgrade = state.upgrades[upgradeKey];
-        upgrade.count += 1n;
+        let upg = state.upgrades[key];
+        upg.count += 1n;
+        upg.cost = (upg.cost * 115n) / 100n; 
+        updateUI();
+    }
+}
 
-        // MILESTONE MECHANIC: Every 10 levels, massive boost and cost spike
-        if (upgrade.count % 10n === 0n) {
-            upgrade.output *= 3n; // 3x permanent output multiplier
-            upgrade.cost = upgrade.cost * 4n; // 4x cost spike
-        } else {
-            upgrade.cost = (upgrade.cost * 115n) / 100n; // Standard 15% increase
-        }
+function buyManager(key) {
+    let upg = state.upgrades[key];
+    if (!upg.automated && state.heat >= upg.managerCost) {
+        state.heat -= upg.managerCost;
+        upg.automated = true;
         
+        // Auto-start the cycle if it wasn't running
+        if (!upg.isRunning && upg.count > 0n) {
+            upg.isRunning = true;
+            upg.timeRemaining = upg.baseTime;
+        }
         updateUI();
     }
 }
@@ -120,7 +120,6 @@ function unlockSkill(skillId) {
     if (!skill || state.unlockedSkills.includes(skillId)) return;
     
     const hasPrerequisites = skill.requires.every(req => state.unlockedSkills.includes(req));
-    
     if (hasPrerequisites && state.mutationPoints >= skill.cost) {
         state.mutationPoints -= skill.cost;
         state.unlockedSkills.push(skillId);
@@ -138,16 +137,15 @@ function prestige() {
     state = {
         heat: 0n,
         totalHeatEarned: 0n,
-        clickPower: 1n,
         biomassMultiplier: state.biomassMultiplier + newBiomass,
         mutationPoints: state.mutationPoints + newMutationPoints,
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
         upgrades: {
-            bacteria: { count: 0n, cost: 50n, output: 2n },
-            tubeWorms: { count: 0n, cost: 500n, output: 15n },
-            vent: { count: 0n, cost: 5000n, output: 150n },
-            magma: { count: 0n, cost: 50000n, output: 2000n }
+            bacteria: { count: 1n, cost: 50n, baseOutput: 2n, baseTime: 1000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
+            tubeWorms: { count: 0n, cost: 500n, baseOutput: 15n, baseTime: 3000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
+            vent: { count: 0n, cost: 5000n, baseOutput: 150n, baseTime: 10000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 250000n },
+            magma: { count: 0n, cost: 50000n, baseOutput: 2000n, baseTime: 30000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
         }
     };
     updateUI();
@@ -156,7 +154,6 @@ function prestige() {
 function checkStory() {
     if (state.storyIndex >= storyMilestones.length) return;
     let nextMilestone = storyMilestones[state.storyIndex];
-    
     if (state.totalHeatEarned >= nextMilestone.threshold) {
         document.getElementById('storyLog').innerText = nextMilestone.text; 
         state.storyIndex++;
@@ -181,28 +178,27 @@ function loadGame() {
                 return value;
             });
             
-            if (typeof loadedState.heat !== 'bigint') throw new Error("Old save version detected");
-            
-            // Safe merge to retain progress but pull in new upgrades (like vent and magma)
-            for (let key in state.upgrades) {
-                if (loadedState.upgrades && loadedState.upgrades[key]) {
-                    state.upgrades[key] = { ...state.upgrades[key], ...loadedState.upgrades[key] };
-                }
+            // Hard reset check: if the old save lacks the AdCap properties, clear it
+            if (typeof loadedState.upgrades.bacteria.baseTime === 'undefined') {
+                throw new Error("Old structure detected. Migrating to AdCap layout.");
             }
-            state.heat = loadedState.heat;
-            state.totalHeatEarned = loadedState.totalHeatEarned;
-            state.clickPower = loadedState.clickPower || 1n;
-            state.biomassMultiplier = loadedState.biomassMultiplier || 1n;
-            state.mutationPoints = loadedState.mutationPoints || 0n;
-            state.unlockedSkills = loadedState.unlockedSkills || [];
-            state.storyIndex = loadedState.storyIndex || 0;
+            
+            state = loadedState;
             
             const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
-            const secondsOffline = BigInt(Math.floor((Date.now() - lastTime) / 1000));
-            const offlineEarnings = calculatePassiveHeat() * secondsOffline;
+            const offlineMs = Date.now() - lastTime;
             
-            state.heat += offlineEarnings;
-            state.totalHeatEarned += offlineEarnings;
+            const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
+            keys.forEach(key => {
+                let upg = state.upgrades[key];
+                if (upg.automated && upg.count > 0n) {
+                    let cycles = BigInt(Math.floor(offlineMs / upg.baseTime));
+                    let offlinePayout = calculatePayout(key) * cycles;
+                    state.heat += offlinePayout;
+                    state.totalHeatEarned += offlinePayout;
+                }
+            });
+            
         } catch (e) {
             console.log("Incompatible save found. Starting fresh.");
             localStorage.removeItem('abyssalSave');
@@ -213,41 +209,63 @@ function loadGame() {
 function updateUI() {
     document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
     
-    const upgradeKeys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
-    upgradeKeys.forEach(key => {
-        document.getElementById(key + 'Cost').innerText = "Cost: " + getUpgradeCost(key).toString() + " Heat";
+    const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
+    keys.forEach(key => {
+        let upg = state.upgrades[key];
         
-        let currentLevel = state.upgrades[key].count;
-        document.getElementById(key + 'Count').innerText = "Level: " + currentLevel.toString();
+        document.getElementById('cost_' + key).innerText = getUpgradeCost(key).toString();
+        document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
+        document.getElementById('output_' + key).innerText = "Output: " + calculatePayout(key).toString();
         
-        let totalOutput = currentLevel * state.upgrades[key].output;
-        let outputMultiplier = state.biomassMultiplier;
-        if (state.unlockedSkills.includes("heat_efficiency")) outputMultiplier *= 2n;
-        if (surgeActive) outputMultiplier *= 5n;
-        
-        document.getElementById(key + 'Output').innerText = "Total Output: " + (totalOutput * outputMultiplier).toString() + "/s";
-        
-        let nextMilestone = ((currentLevel / 10n) + 1n) * 10n;
-        document.getElementById(key + 'Milestone').innerText = "Next Boost: Lvl " + nextMilestone.toString() + " (3x Output)";
+        let nextMilestone = ((upg.count / 10n) + 1n) * 10n;
+        document.getElementById('milestone_' + key).innerText = "Next Boost: Lvl " + nextMilestone.toString();
         
         document.getElementById('btn_' + key).disabled = state.heat < getUpgradeCost(key);
+        
+        let managerBtn = document.getElementById('manager_' + key);
+        if (upg.automated) {
+            managerBtn.innerText = "Automated";
+            managerBtn.disabled = true;
+            managerBtn.style.color = "#22c55e";
+            managerBtn.style.borderColor = "#22c55e";
+        } else {
+            managerBtn.innerText = "Automate (" + upg.managerCost.toString() + ")";
+            managerBtn.disabled = state.heat < upg.managerCost;
+        }
+
+        // Handle Progress Bar display states
+        let fill = document.getElementById('fill_' + key);
+        let timeText = document.getElementById('time_' + key);
+        let bar = document.getElementById('bar_' + key);
+        
+        if (upg.count === 0n) {
+            bar.style.backgroundColor = "#0f172a";
+            fill.style.width = "0%";
+            timeText.innerText = "Locked";
+            bar.style.cursor = "not-allowed";
+        } else if (upg.isRunning) {
+            let progressPercent = 100 - ((upg.timeRemaining / upg.baseTime) * 100);
+            fill.style.width = progressPercent + "%";
+            timeText.innerText = (upg.timeRemaining / 1000).toFixed(1) + "s";
+            bar.style.cursor = upg.automated ? "default" : "not-allowed";
+        } else {
+            fill.style.width = "0%";
+            timeText.innerText = "Run (" + (upg.baseTime / 1000).toFixed(1) + "s)";
+            bar.style.cursor = "pointer";
+            bar.style.backgroundColor = "#1e293b";
+        }
     });
     
     const surgeBtn = document.getElementById('surgeBtn');
-    const clickerBtn = document.getElementById('ventClicker');
-    
     if (surgeCooldown > 0 && !surgeActive) {
         surgeBtn.disabled = true;
         surgeBtn.innerText = `Geothermal Surge (Cooldown: ${surgeCooldown}s)`;
-        clickerBtn.classList.remove('surge-active');
     } else if (surgeActive) {
         surgeBtn.disabled = true;
         surgeBtn.innerText = `Geothermal Surge (ACTIVE!)`;
-        clickerBtn.classList.add('surge-active');
     } else {
         surgeBtn.disabled = false;
         surgeBtn.innerText = `Geothermal Surge (Ready)`;
-        clickerBtn.classList.remove('surge-active');
     }
     
     if (state.totalHeatEarned >= 100000n || state.biomassMultiplier > 1n) {
@@ -276,19 +294,45 @@ function updateUI() {
 loadGame();
 updateUI();
 
+// 50ms Tick Loop (Runs 20 times per second)
 setInterval(() => {
-    let passiveHeat = calculatePassiveHeat();
-    if (passiveHeat > 0n) {
-        state.heat += passiveHeat;
-        state.totalHeatEarned += passiveHeat;
-    }
+    let now = Date.now();
+    let dt = now - lastTick;
+    lastTick = now;
     
-    if (surgeCooldown > 0) {
-        surgeCooldown--;
-    }
+    const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
+    keys.forEach(key => {
+        let upg = state.upgrades[key];
+        
+        if (upg.isRunning) {
+            upg.timeRemaining -= dt;
+            if (upg.timeRemaining <= 0) {
+                // Cycle complete
+                let payout = calculatePayout(key);
+                state.heat += payout;
+                state.totalHeatEarned += payout;
+                
+                if (upg.automated) {
+                    upg.timeRemaining = upg.baseTime; // Restart seamlessly
+                } else {
+                    upg.isRunning = false;
+                    upg.timeRemaining = 0;
+                }
+            }
+        } else if (upg.automated && upg.count > 0n) {
+            // Failsafe to push automated machines back into the running state
+            upg.isRunning = true;
+            upg.timeRemaining = upg.baseTime;
+        }
+    });
     
-    checkStory();
     updateUI();
+}, 50);
+
+// Slower 1-second interval for Cooldowns and Story checks
+setInterval(() => {
+    if (surgeCooldown > 0) surgeCooldown--;
+    checkStory();
 }, 1000);
 
 setInterval(saveGame, 10000);
