@@ -1,5 +1,5 @@
 let state = {
-    saveVersion: 2, // Version bump forces a wipe of the old broken economy
+    saveVersion: 2, 
     heat: 0n,
     totalHeatEarned: 0n,
     biomassMultiplier: 1n,
@@ -49,7 +49,7 @@ function setBuyMode(mode) {
 function activateSurge() {
     if (surgeCooldown <= 0) {
         surgeActive = true;
-        surgeCooldown = 120; // Nerfed to 2 minutes
+        surgeCooldown = 120; 
         setTimeout(() => {
             surgeActive = false;
             updateUI();
@@ -62,7 +62,6 @@ function activateSurge() {
 function getActualTime(key) {
     let upg = state.upgrades[key];
     let divs = 1;
-    // Speed milestones at 50, 100, 200
     if (upg.count >= 50n) divs *= 2;
     if (upg.count >= 100n) divs *= 2;
     if (upg.count >= 200n) divs *= 2;
@@ -85,8 +84,12 @@ function calculatePayout(key) {
     let multiplier = getMilestoneMultiplier(upg.count);
     multiplier *= state.biomassMultiplier;
     
+    // Logs Achievement System: +25% Output per unlocked log
+    let storyBonus = 100n + (BigInt(state.storyIndex) * 25n);
+    multiplier = (multiplier * storyBonus) / 100n;
+    
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
-    if (surgeActive) multiplier *= 3n; // Nerfed from x5
+    if (surgeActive) multiplier *= 3n; 
     
     return upg.count * upg.baseOutput * multiplier;
 }
@@ -109,7 +112,7 @@ function getBulkCostInfo(key) {
 
         totalCost += actualCost;
         itemsToBuy++;
-        tempCost = (tempCost * 115n) / 100n; // Standard 1.15x curve, no artificial spikes
+        tempCost = (tempCost * 115n) / 100n;
     }
     
     if (itemsToBuy === 0n && buyMode === 'Max') {
@@ -180,7 +183,7 @@ function unlockSkill(skillId) {
 }
 
 function prestige() {
-    const prestigeThreshold = 1000000n; // Pushed back to 1 Million
+    const prestigeThreshold = 1000000n; 
     if (state.totalHeatEarned < prestigeThreshold) return;
 
     let newBiomass = state.totalHeatEarned / 500000n; 
@@ -205,12 +208,32 @@ function prestige() {
     updateUI();
 }
 
+function renderStoryLogs() {
+    const container = document.getElementById('storyLogContainer');
+    container.innerHTML = '';
+    for(let i = 0; i < state.storyIndex; i++) {
+        const newLog = document.createElement('div');
+        newLog.className = 'story-entry';
+        newLog.innerHTML = `<strong>Log ${i + 1} - ${storyMilestones[i].threshold} Heat Requirement</strong><br>${storyMilestones[i].text}`;
+        container.appendChild(newLog);
+    }
+}
+
 function checkStory() {
     if (state.storyIndex >= storyMilestones.length) return;
     let nextMilestone = storyMilestones[state.storyIndex];
     if (state.totalHeatEarned >= nextMilestone.threshold) {
-        document.getElementById('storyLog').innerText = nextMilestone.text; 
+        
+        const container = document.getElementById('storyLogContainer');
+        const newLog = document.createElement('div');
+        newLog.className = 'story-entry';
+        newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${nextMilestone.threshold} Heat Requirement</strong><br>${nextMilestone.text}`;
+        
+        // Push the new log to the top of the container
+        container.prepend(newLog);
+        
         state.storyIndex++;
+        updateUI(); // Pushes the new 25% output multiplier immediately
         checkStory(); 
     }
 }
@@ -233,10 +256,7 @@ function loadGame() {
                 return value;
             });
             
-            // Hard wipe for economy balance update
-            if (loadedState.saveVersion !== 2) {
-                throw new Error("Economy Rebalance: Forcing fresh save.");
-            }
+            if (loadedState.saveVersion !== 2) throw new Error("Economy Rebalance: Forcing fresh save.");
             
             state = loadedState;
             
@@ -259,6 +279,9 @@ function loadGame() {
             localStorage.removeItem('abyssalSave');
         }
     }
+    
+    // Force logs to generate when loading the game
+    renderStoryLogs();
 }
 
 function getNextMilestoneText(currentLevel) {
@@ -339,10 +362,15 @@ function updateUI() {
         document.getElementById('prestigeBtn').classList.remove('hidden');
     }
 
+    // Evolution UI Locking Logic
     if (state.biomassMultiplier > 1n) {
-        document.getElementById('btn_tab_evolution').classList.remove('hidden');
+        document.getElementById('evolutionLocked').classList.add('hidden');
+        document.getElementById('evolutionContent').classList.remove('hidden');
         document.getElementById('biomassDisplay').innerText = "Biomass Multiplier: x" + state.biomassMultiplier.toString();
         document.getElementById('mutationDisplay').innerText = "Mutation Points: " + state.mutationPoints.toString();
+    } else {
+        document.getElementById('evolutionLocked').classList.remove('hidden');
+        document.getElementById('evolutionContent').classList.add('hidden');
     }
 
     state.unlockedSkills.forEach(skillId => {
