@@ -1,0 +1,141 @@
+:root {
+    --bg-colour: #060b13;
+    --panel-bg: #111a27;
+    --accent: #00d2ff;
+    --accent-hover: #3a86ff;
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background-color: var(--bg-colour);
+    color: var(--text-main);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 300px 400px 300px;
+    gap: 20px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+.panel {
+    background-color: var(--panel-bg);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #1e293b;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Typography */
+h1, h2, h3 {
+    margin-top: 0;
+    color: var(--accent);
+}
+
+#storyLog {
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Core Clicker */
+.currencies {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.clicker-btn {
+    width: 100%;
+    height: 100px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background-color: transparent;
+    color: var(--accent);
+    border: 2px dashed var(--accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    margin-bottom: 30px;
+}
+
+.clicker-btn:active {
+    background-color: rgba(0, 210, 255, 0.1);
+    transform: scale(0.98);
+}
+
+/* Upgrades Store */
+.upgrade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.upgrade-item p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+button {
+    background-color: var(--accent-hover);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: var(--accent);
+}
+
+/* Prestige */
+.prestige-btn {
+    width: 100%;
+    margin-top: 20px;
+    background-color: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 15px;
+}
+
+.prestige-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Skill Tree */
+.skill-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.skill-btn {
+    background-color: transparent;
+    border: 1px solid var(--accent-hover);
+    color: var(--text-main);
+    text-align: left;
+    padding: 15px;
+}
+
+.skill-btn.unlocked {
+    background-color: rgba(0, 210, 255, 0.15);
+    border-color: var(--accent);
+}
