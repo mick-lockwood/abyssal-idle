@@ -8,13 +8,11 @@
 </head>
 <body>
     <div class="container">
-        <!-- Story Log Panel -->
         <div class="panel story-panel">
             <h2>The Abyss</h2>
             <p id="storyLog">A spark in the dark. The water is freezing, but the rock is warm. Grow.</p>
         </div>
 
-        <!-- Core Game Panel -->
         <div class="panel main-panel">
             <div class="currencies">
                 <h1 id="heatDisplay">Heat: 0</h1>
@@ -25,19 +23,20 @@
             <button id="ventClicker" class="clicker-btn" onclick="generateHeatClick(event)">
                 Pulse Vent
             </button>
-
+            
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
                 Geothermal Surge (Ready)
             </button>
-            
-            <!-- Upgrades Store -->
+
             <div class="store">
                 <h2>Oasis Upgrades</h2>
+                
                 <div class="upgrade-item">
                     <div>
                         <strong>Chemosynthetic Bacteria</strong>
                         <p id="bacteriaCost">Cost: 50 Heat</p>
-                        <p id="bacteriaCount">Owned: 0</p>
+                        <p id="bacteriaCount">Level: 0</p>
+                        <p id="bacteriaOutput" class="output-text">Total Output: 0/s</p>
                     </div>
                     <button id="btn_bacteria" onclick="buyUpgrade('bacteria')">Evolve</button>
                 </div>
@@ -46,16 +45,18 @@
                     <div>
                         <strong>Tube Worm Colony</strong>
                         <p id="tubeWormsCost">Cost: 500 Heat</p>
-                        <p id="tubeWormsCount">Owned: 0</p>
+                        <p id="tubeWormsCount">Level: 0</p>
+                        <p id="tubeWormsOutput" class="output-text">Total Output: 0/s</p>
                     </div>
                     <button id="btn_tubeWorms" onclick="buyUpgrade('tubeWorms')">Anchor</button>
                 </div>
-            
+
                 <div class="upgrade-item">
                     <div>
                         <strong>Thermal Vent</strong>
                         <p id="ventCost">Cost: 5000 Heat</p>
-                        <p id="ventCount">Owned: 0</p>
+                        <p id="ventCount">Level: 0</p>
+                        <p id="ventOutput" class="output-text">Total Output: 0/s</p>
                     </div>
                     <button id="btn_vent" onclick="buyUpgrade('vent')">Excavate</button>
                 </div>
@@ -64,13 +65,18 @@
                     <div>
                         <strong>Magma Chamber</strong>
                         <p id="magmaCost">Cost: 50000 Heat</p>
-                        <p id="magmaCount">Owned: 0</p>
+                        <p id="magmaCount">Level: 0</p>
+                        <p id="magmaOutput" class="output-text">Total Output: 0/s</p>
                     </div>
                     <button id="btn_magma" onclick="buyUpgrade('magma')">Tap Core</button>
                 </div>
             </div>
 
-        <!-- Skill Tree Panel -->
+            <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
+                Collapse & Mutate (Requires 100,000 Heat)
+            </button>
+        </div>
+
         <div id="skillTreePanel" class="panel skill-panel hidden">
             <h2>Mutation Tree</h2>
             <div class="skill-grid">
@@ -92,7 +98,6 @@
             </div>
         </div>
     </div>
-
     <script src="game.js"></script>
 </body>
 </html>
