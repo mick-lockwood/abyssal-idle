@@ -6,7 +6,6 @@ let state = {
     unlockedSkills: [],
     storyIndex: 0,
     upgrades: {
-        // baseTime is in milliseconds. 
         bacteria: { count: 1n, cost: 50n, baseOutput: 2n, baseTime: 1000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
         tubeWorms: { count: 0n, cost: 500n, baseOutput: 15n, baseTime: 3000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
         vent: { count: 0n, cost: 5000n, baseOutput: 150n, baseTime: 10000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 250000n },
@@ -17,6 +16,7 @@ let state = {
 let surgeActive = false;
 let surgeCooldown = 0;
 let lastTick = Date.now();
+let buyMode = '1'; // Can be '1', '10', or 'Max'
 
 const storyMilestones = [
     { threshold: 0n, text: "A spark in the dark. The water is freezing, but the rock is warm. Grow." },
@@ -29,6 +29,24 @@ const skillNodes = {
     "heat_efficiency": { cost: 2n, requires: [] },
     "cheaper_bacteria": { cost: 3n, requires: [] }
 };
+
+const speedMilestones = [25n, 50n, 100n, 250n, 500n, 1000n];
+
+// UI Control Functions
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active-tab');
+    document.getElementById('btn_' + tabId).classList.add('active');
+}
+
+function setBuyMode(mode) {
+    buyMode = mode;
+    document.querySelectorAll('.toggle-btn').forEach(el => el.classList.remove('active-toggle'));
+    document.getElementById('buy_' + mode).classList.add('active-toggle');
+    updateUI();
+}
 
 function activateSurge() {
     if (surgeCooldown <= 0) {
@@ -48,9 +66,7 @@ function triggerCycle(key, event) {
         upg.isRunning = true;
         upg.timeRemaining = upg.baseTime;
         
-        if (event) {
-            spawnFloatingText(event, "Running!");
-        }
+        if (event) spawnFloatingText(event, "Running!");
     }
 }
 
@@ -64,15 +80,12 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
+// Core Math Functions
 function calculatePayout(key) {
     let upg = state.upgrades[key];
     if (upg.count === 0n) return 0n;
 
-    let multiplier = 1n;
-    
-    // 3x multiplier applies cumulatively every 10 levels
-    let milestoneMultiplier = 3n ** (upg.count / 10n);
-    multiplier *= milestoneMultiplier;
+    let multiplier = 3n ** (upg.count / 10n); // 3x multiplier every 10 levels
     multiplier *= state.biomassMultiplier;
     
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
@@ -81,23 +94,69 @@ function calculatePayout(key) {
     return upg.count * upg.baseOutput * multiplier;
 }
 
-function getUpgradeCost(key) {
-    let cost = state.upgrades[key].cost;
-    if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
-        return (cost * 80n) / 100n;
+// Simulates future purchases to determine bulk cost exactly
+function getBulkCostInfo(key) {
+    let upg = state.upgrades[key];
+    let tempCost = upg.cost;
+    let totalCost = 0n;
+    let itemsToBuy = 0n;
+    let simulatedLevel = upg.count;
+    
+    let targetAmount = buyMode === '1' ? 1n : (buyMode === '10' ? 10n : 9999n); // 9999 acts as 'Max'
+
+    for(let i = 0n; i < targetAmount; i++) {
+        let actualCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
+            actualCost = (tempCost * 80n) / 100n;
+        }
+
+        if (buyMode === 'Max' && state.heat < (totalCost + actualCost)) {
+            break;
+        }
+
+        totalCost += actualCost;
+        itemsToBuy++;
+        simulatedLevel++;
+
+        if (simulatedLevel % 10n === 0n) {
+            tempCost = tempCost * 4n; // Cost spike
+        } else {
+            tempCost = (tempCost * 115n) / 100n; // Standard exponential increase
+        }
     }
-    return cost;
+    
+    // Fallback if they can't afford even 1 on Max mode
+    if (itemsToBuy === 0n && buyMode === 'Max') {
+        let fallbackCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) fallbackCost = (tempCost * 80n) / 100n;
+        return { count: 0n, cost: fallbackCost };
+    }
+
+    return { count: itemsToBuy, cost: totalCost };
 }
 
 function buyUpgrade(key) {
-    let currentCost = getUpgradeCost(key);
-    if (state.heat >= currentCost) {
-        state.heat -= currentCost;
-        let upg = state.upgrades[key];
-        upg.count += 1n;
-        upg.cost = (upg.cost * 115n) / 100n; 
-        updateUI();
+    let bulkInfo = getBulkCostInfo(key);
+    if (bulkInfo.count === 0n || state.heat < bulkInfo.cost) return;
+
+    state.heat -= bulkInfo.cost;
+    let upg = state.upgrades[key];
+
+    for(let i = 0n; i < bulkInfo.count; i++) {
+        upg.count++;
+        
+        // Speed Milestone Check
+        if (speedMilestones.includes(upg.count)) {
+            upg.baseTime = Math.max(50, Math.floor(upg.baseTime / 2)); // Halve time, cap at 50ms tick limit
+        }
+
+        if (upg.count % 10n === 0n) {
+            upg.cost = upg.cost * 4n;
+        } else {
+            upg.cost = (upg.cost * 115n) / 100n;
+        }
     }
+    updateUI();
 }
 
 function buyManager(key) {
@@ -105,8 +164,6 @@ function buyManager(key) {
     if (!upg.automated && state.heat >= upg.managerCost) {
         state.heat -= upg.managerCost;
         upg.automated = true;
-        
-        // Auto-start the cycle if it wasn't running
         if (!upg.isRunning && upg.count > 0n) {
             upg.isRunning = true;
             upg.timeRemaining = upg.baseTime;
@@ -119,8 +176,7 @@ function unlockSkill(skillId) {
     const skill = skillNodes[skillId];
     if (!skill || state.unlockedSkills.includes(skillId)) return;
     
-    const hasPrerequisites = skill.requires.every(req => state.unlockedSkills.includes(req));
-    if (hasPrerequisites && state.mutationPoints >= skill.cost) {
+    if (state.mutationPoints >= skill.cost) {
         state.mutationPoints -= skill.cost;
         state.unlockedSkills.push(skillId);
         updateUI();
@@ -148,6 +204,7 @@ function prestige() {
             magma: { count: 0n, cost: 50000n, baseOutput: 2000n, baseTime: 30000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
         }
     };
+    switchTab('tab_store');
     updateUI();
 }
 
@@ -161,6 +218,7 @@ function checkStory() {
     }
 }
 
+// Saving & Loading
 function saveGame() {
     const serialized = JSON.stringify(state, (key, value) => 
         typeof value === 'bigint' ? value.toString() + 'n' : value
@@ -178,7 +236,6 @@ function loadGame() {
                 return value;
             });
             
-            // Hard reset check: if the old save lacks the AdCap properties, clear it
             if (typeof loadedState.upgrades.bacteria.baseTime === 'undefined') {
                 throw new Error("Old structure detected. Migrating to AdCap layout.");
             }
@@ -198,11 +255,21 @@ function loadGame() {
                     state.totalHeatEarned += offlinePayout;
                 }
             });
-            
         } catch (e) {
             console.log("Incompatible save found. Starting fresh.");
             localStorage.removeItem('abyssalSave');
         }
+    }
+}
+
+function getNextMilestoneText(currentLevel) {
+    let next10 = ((currentLevel / 10n) + 1n) * 10n;
+    let nextSpeed = speedMilestones.find(m => m > currentLevel);
+    
+    if (nextSpeed && nextSpeed < next10) {
+        return `Next Boost: Lvl ${nextSpeed} (Speed x2)`;
+    } else {
+        return `Next Boost: Lvl ${next10} (Output x3)`;
     }
 }
 
@@ -212,15 +279,16 @@ function updateUI() {
     const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
     keys.forEach(key => {
         let upg = state.upgrades[key];
+        let bulkInfo = getBulkCostInfo(key);
         
-        document.getElementById('cost_' + key).innerText = getUpgradeCost(key).toString();
+        document.getElementById('cost_' + key).innerText = bulkInfo.cost.toString();
+        document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
+        
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
         document.getElementById('output_' + key).innerText = "Output: " + calculatePayout(key).toString();
         
-        let nextMilestone = ((upg.count / 10n) + 1n) * 10n;
-        document.getElementById('milestone_' + key).innerText = "Next Boost: Lvl " + nextMilestone.toString();
-        
-        document.getElementById('btn_' + key).disabled = state.heat < getUpgradeCost(key);
+        document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
+        document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
         let managerBtn = document.getElementById('manager_' + key);
         if (upg.automated) {
@@ -233,7 +301,6 @@ function updateUI() {
             managerBtn.disabled = state.heat < upg.managerCost;
         }
 
-        // Handle Progress Bar display states
         let fill = document.getElementById('fill_' + key);
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
@@ -273,10 +340,7 @@ function updateUI() {
     }
 
     if (state.biomassMultiplier > 1n) {
-        document.getElementById('biomassDisplay').classList.remove('hidden');
-        document.getElementById('mutationDisplay').classList.remove('hidden');
-        document.getElementById('skillTreePanel').classList.remove('hidden');
-        
+        document.getElementById('btn_tab_evolution').classList.remove('hidden');
         document.getElementById('biomassDisplay').innerText = "Biomass Multiplier: x" + state.biomassMultiplier.toString();
         document.getElementById('mutationDisplay').innerText = "Mutation Points: " + state.mutationPoints.toString();
     }
@@ -294,7 +358,7 @@ function updateUI() {
 loadGame();
 updateUI();
 
-// 50ms Tick Loop (Runs 20 times per second)
+// High Frequency Loop (Progress Bars)
 setInterval(() => {
     let now = Date.now();
     let dt = now - lastTick;
@@ -307,20 +371,18 @@ setInterval(() => {
         if (upg.isRunning) {
             upg.timeRemaining -= dt;
             if (upg.timeRemaining <= 0) {
-                // Cycle complete
                 let payout = calculatePayout(key);
                 state.heat += payout;
                 state.totalHeatEarned += payout;
                 
                 if (upg.automated) {
-                    upg.timeRemaining = upg.baseTime; // Restart seamlessly
+                    upg.timeRemaining = upg.baseTime;
                 } else {
                     upg.isRunning = false;
                     upg.timeRemaining = 0;
                 }
             }
         } else if (upg.automated && upg.count > 0n) {
-            // Failsafe to push automated machines back into the running state
             upg.isRunning = true;
             upg.timeRemaining = upg.baseTime;
         }
@@ -329,7 +391,7 @@ setInterval(() => {
     updateUI();
 }, 50);
 
-// Slower 1-second interval for Cooldowns and Story checks
+// Slower Loop (Cooldowns and Story)
 setInterval(() => {
     if (surgeCooldown > 0) surgeCooldown--;
     checkStory();
