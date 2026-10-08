@@ -19,73 +19,120 @@
                 <h3 id="biomassDisplay" class="hidden">Biomass Multiplier: x1</h3>
                 <h3 id="mutationDisplay" class="hidden">Mutation Points: 0</h3>
             </div>
-
-            <button id="ventClicker" class="clicker-btn" onclick="generateHeatClick(event)">
-                Pulse Vent
-            </button>
             
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
                 Geothermal Surge (Ready)
             </button>
 
-            <div class="store">
-                <h2>Oasis Upgrades</h2>
-                
-                <div class="upgrade-item">
-                    <div>
+            <div class="store" id="businessStore">
+                <!-- Bacteria -->
+                <div class="business-card">
+                    <div class="business-header">
                         <strong>Chemosynthetic Bacteria</strong>
-                        <p id="bacteriaCost">Cost: 50 Heat</p>
-                        <p id="bacteriaCount">Level: 0</p>
-                        <p id="bacteriaOutput" class="output-text">Total Output: 0/s</p>
-                        <p id="bacteriaMilestone" class="milestone-text">Next Boost: Lvl 10</p>
+                        <span id="bacteriaCount" class="level-badge">Lvl 1</span>
                     </div>
-                    <button id="btn_bacteria" onclick="buyUpgrade('bacteria')">Evolve</button>
+                    <div class="progress-row">
+                        <div class="progress-bar" id="bar_bacteria" onclick="triggerCycle('bacteria', event)">
+                            <div class="progress-fill" id="fill_bacteria"></div>
+                            <span class="progress-text" id="time_bacteria">1.0s</span>
+                        </div>
+                        <button id="btn_bacteria" class="buy-btn" onclick="buyUpgrade('bacteria')">
+                            Buy<br><span id="cost_bacteria">50</span>
+                        </button>
+                    </div>
+                    <div class="business-stats">
+                        <span id="output_bacteria" class="output-text">Output: 2</span>
+                        <span id="milestone_bacteria" class="milestone-text">Next Boost: Lvl 10</span>
+                        <button id="manager_bacteria" class="manager-btn" onclick="buyManager('bacteria')">
+                            Automate (1,000 Heat)
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="upgrade-item">
-                    <div>
+
+                <!-- Tube Worms -->
+                <div class="business-card">
+                    <div class="business-header">
                         <strong>Tube Worm Colony</strong>
-                        <p id="tubeWormsCost">Cost: 500 Heat</p>
-                        <p id="tubeWormsCount">Level: 0</p>
-                        <p id="tubeWormsOutput" class="output-text">Total Output: 0/s</p>
-                        <p id="tubeWormsMilestone" class="milestone-text">Next Boost: Lvl 10</p>
+                        <span id="tubeWormsCount" class="level-badge">Lvl 0</span>
                     </div>
-                    <button id="btn_tubeWorms" onclick="buyUpgrade('tubeWorms')">Anchor</button>
+                    <div class="progress-row">
+                        <div class="progress-bar" id="bar_tubeWorms" onclick="triggerCycle('tubeWorms', event)">
+                            <div class="progress-fill" id="fill_tubeWorms"></div>
+                            <span class="progress-text" id="time_tubeWorms">3.0s</span>
+                        </div>
+                        <button id="btn_tubeWorms" class="buy-btn" onclick="buyUpgrade('tubeWorms')">
+                            Buy<br><span id="cost_tubeWorms">500</span>
+                        </button>
+                    </div>
+                    <div class="business-stats">
+                        <span id="output_tubeWorms" class="output-text">Output: 0</span>
+                        <span id="milestone_tubeWorms" class="milestone-text">Next Boost: Lvl 10</span>
+                        <button id="manager_tubeWorms" class="manager-btn" onclick="buyManager('tubeWorms')">
+                            Automate (15,000 Heat)
+                        </button>
+                    </div>
                 </div>
-            
-                <div class="upgrade-item">
-                    <div>
+
+                <!-- Thermal Vent -->
+                <div class="business-card">
+                    <div class="business-header">
                         <strong>Thermal Vent</strong>
-                        <p id="ventCost">Cost: 5000 Heat</p>
-                        <p id="ventCount">Level: 0</p>
-                        <p id="ventOutput" class="output-text">Total Output: 0/s</p>
-                        <p id="ventMilestone" class="milestone-text">Next Boost: Lvl 10</p>
+                        <span id="ventCount" class="level-badge">Lvl 0</span>
                     </div>
-                    <button id="btn_vent" onclick="buyUpgrade('vent')">Excavate</button>
+                    <div class="progress-row">
+                        <div class="progress-bar" id="bar_vent" onclick="triggerCycle('vent', event)">
+                            <div class="progress-fill" id="fill_vent"></div>
+                            <span class="progress-text" id="time_vent">10.0s</span>
+                        </div>
+                        <button id="btn_vent" class="buy-btn" onclick="buyUpgrade('vent')">
+                            Buy<br><span id="cost_vent">5000</span>
+                        </button>
+                    </div>
+                    <div class="business-stats">
+                        <span id="output_vent" class="output-text">Output: 0</span>
+                        <span id="milestone_vent" class="milestone-text">Next Boost: Lvl 10</span>
+                        <button id="manager_vent" class="manager-btn" onclick="buyManager('vent')">
+                            Automate (250,000 Heat)
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="upgrade-item">
-                    <div>
+
+                <!-- Magma Chamber -->
+                <div class="business-card">
+                    <div class="business-header">
                         <strong>Magma Chamber</strong>
-                        <p id="magmaCost">Cost: 50000 Heat</p>
-                        <p id="magmaCount">Level: 0</p>
-                        <p id="magmaOutput" class="output-text">Total Output: 0/s</p>
-                        <p id="magmaMilestone" class="milestone-text">Next Boost: Lvl 10</p>
+                        <span id="magmaCount" class="level-badge">Lvl 0</span>
                     </div>
-                    <button id="btn_magma" onclick="buyUpgrade('magma')">Tap Core</button>
+                    <div class="progress-row">
+                        <div class="progress-bar" id="bar_magma" onclick="triggerCycle('magma', event)">
+                            <div class="progress-fill" id="fill_magma"></div>
+                            <span class="progress-text" id="time_magma">30.0s</span>
+                        </div>
+                        <button id="btn_magma" class="buy-btn" onclick="buyUpgrade('magma')">
+                            Buy<br><span id="cost_magma">50000</span>
+                        </button>
+                    </div>
+                    <div class="business-stats">
+                        <span id="output_magma" class="output-text">Output: 0</span>
+                        <span id="milestone_magma" class="milestone-text">Next Boost: Lvl 10</span>
+                        <button id="manager_magma" class="manager-btn" onclick="buyManager('magma')">
+                            Automate (5,000,000 Heat)
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
+                Collapse & Mutate (Requires 100,000 Heat)
+            </button>
+        </div>
+
         <div id="skillTreePanel" class="panel skill-panel hidden">
             <h2>Mutation Tree</h2>
             <div class="skill-grid">
-                <button id="skill_double_click" class="skill-btn" onclick="unlockSkill('double_click')">
-                    <strong>Bifurcation</strong><br>
-                    2x Click Power<br>
-                    Cost: 1 MP
-                </button>
                 <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
                     <strong>Thermal Efficiency</strong><br>
-                    2x Passive Heat<br>
+                    2x All Outputs<br>
                     Cost: 2 MP
                 </button>
                 <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
