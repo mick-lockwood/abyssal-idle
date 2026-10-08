@@ -8,21 +8,31 @@
 </head>
 <body>
     <div class="container">
-        <div class="panel story-panel">
-            <h2>The Abyss</h2>
-            <p id="storyLog">A spark in the dark. The water is freezing, but the rock is warm. Grow.</p>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button id="btn_tab_store" class="tab-btn active" onclick="switchTab('tab_store')">Oasis</button>
+            <button id="btn_tab_evolution" class="tab-btn hidden" onclick="switchTab('tab_evolution')">Mutations</button>
+            <button id="btn_tab_story" class="tab-btn" onclick="switchTab('tab_story')">Logs</button>
         </div>
 
-        <div class="panel main-panel">
+        <!-- Oasis Tab (Main Game) -->
+        <div id="tab_store" class="panel tab-content active-tab">
             <div class="currencies">
                 <h1 id="heatDisplay">Heat: 0</h1>
-                <h3 id="biomassDisplay" class="hidden">Biomass Multiplier: x1</h3>
-                <h3 id="mutationDisplay" class="hidden">Mutation Points: 0</h3>
             </div>
             
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
                 Geothermal Surge (Ready)
             </button>
+
+            <!-- Bulk Buy Controls -->
+            <div class="buy-controls">
+                <span>Buy Multiplier:</span>
+                <button id="buy_1" class="toggle-btn active-toggle" onclick="setBuyMode('1')">x1</button>
+                <button id="buy_10" class="toggle-btn" onclick="setBuyMode('10')">x10</button>
+                <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">xMax</button>
+            </div>
 
             <div class="store" id="businessStore">
                 <!-- Bacteria -->
@@ -37,7 +47,7 @@
                             <span class="progress-text" id="time_bacteria">1.0s</span>
                         </div>
                         <button id="btn_bacteria" class="buy-btn" onclick="buyUpgrade('bacteria')">
-                            Buy<br><span id="cost_bacteria">50</span>
+                            Buy <span id="qty_bacteria">x1</span><br><span id="cost_bacteria">50</span>
                         </button>
                     </div>
                     <div class="business-stats">
@@ -61,7 +71,7 @@
                             <span class="progress-text" id="time_tubeWorms">3.0s</span>
                         </div>
                         <button id="btn_tubeWorms" class="buy-btn" onclick="buyUpgrade('tubeWorms')">
-                            Buy<br><span id="cost_tubeWorms">500</span>
+                            Buy <span id="qty_tubeWorms">x1</span><br><span id="cost_tubeWorms">500</span>
                         </button>
                     </div>
                     <div class="business-stats">
@@ -85,7 +95,7 @@
                             <span class="progress-text" id="time_vent">10.0s</span>
                         </div>
                         <button id="btn_vent" class="buy-btn" onclick="buyUpgrade('vent')">
-                            Buy<br><span id="cost_vent">5000</span>
+                            Buy <span id="qty_vent">x1</span><br><span id="cost_vent">5000</span>
                         </button>
                     </div>
                     <div class="business-stats">
@@ -109,7 +119,7 @@
                             <span class="progress-text" id="time_magma">30.0s</span>
                         </div>
                         <button id="btn_magma" class="buy-btn" onclick="buyUpgrade('magma')">
-                            Buy<br><span id="cost_magma">50000</span>
+                            Buy <span id="qty_magma">x1</span><br><span id="cost_magma">50000</span>
                         </button>
                     </div>
                     <div class="business-stats">
@@ -127,8 +137,12 @@
             </button>
         </div>
 
-        <div id="skillTreePanel" class="panel skill-panel hidden">
-            <h2>Mutation Tree</h2>
+        <!-- Evolution Tab (Skill Tree) -->
+        <div id="tab_evolution" class="panel tab-content hidden">
+            <h3 id="biomassDisplay">Biomass Multiplier: x1</h3>
+            <h3 id="mutationDisplay">Mutation Points: 0</h3>
+            <hr style="border-color: #1e293b; margin: 20px 0;">
+            
             <div class="skill-grid">
                 <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
                     <strong>Thermal Efficiency</strong><br>
@@ -142,6 +156,13 @@
                 </button>
             </div>
         </div>
+
+        <!-- Logs Tab (Story) -->
+        <div id="tab_story" class="panel tab-content hidden">
+            <h2>The Abyss</h2>
+            <p id="storyLog">A spark in the dark. The water is freezing, but the rock is warm. Grow.</p>
+        </div>
+
     </div>
     <script src="game.js"></script>
 </body>
