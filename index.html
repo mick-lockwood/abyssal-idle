@@ -37,6 +37,7 @@
                         <p id="bacteriaCost">Cost: 50 Heat</p>
                         <p id="bacteriaCount">Level: 0</p>
                         <p id="bacteriaOutput" class="output-text">Total Output: 0/s</p>
+                        <p id="bacteriaMilestone" class="milestone-text">Next Boost: Lvl 10</p>
                     </div>
                     <button id="btn_bacteria" onclick="buyUpgrade('bacteria')">Evolve</button>
                 </div>
@@ -47,16 +48,18 @@
                         <p id="tubeWormsCost">Cost: 500 Heat</p>
                         <p id="tubeWormsCount">Level: 0</p>
                         <p id="tubeWormsOutput" class="output-text">Total Output: 0/s</p>
+                        <p id="tubeWormsMilestone" class="milestone-text">Next Boost: Lvl 10</p>
                     </div>
                     <button id="btn_tubeWorms" onclick="buyUpgrade('tubeWorms')">Anchor</button>
                 </div>
-
+            
                 <div class="upgrade-item">
                     <div>
                         <strong>Thermal Vent</strong>
                         <p id="ventCost">Cost: 5000 Heat</p>
                         <p id="ventCount">Level: 0</p>
                         <p id="ventOutput" class="output-text">Total Output: 0/s</p>
+                        <p id="ventMilestone" class="milestone-text">Next Boost: Lvl 10</p>
                     </div>
                     <button id="btn_vent" onclick="buyUpgrade('vent')">Excavate</button>
                 </div>
@@ -67,16 +70,11 @@
                         <p id="magmaCost">Cost: 50000 Heat</p>
                         <p id="magmaCount">Level: 0</p>
                         <p id="magmaOutput" class="output-text">Total Output: 0/s</p>
+                        <p id="magmaMilestone" class="milestone-text">Next Boost: Lvl 10</p>
                     </div>
                     <button id="btn_magma" onclick="buyUpgrade('magma')">Tap Core</button>
                 </div>
             </div>
-
-            <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
-                Collapse & Mutate (Requires 100,000 Heat)
-            </button>
-        </div>
-
         <div id="skillTreePanel" class="panel skill-panel hidden">
             <h2>Mutation Tree</h2>
             <div class="skill-grid">
