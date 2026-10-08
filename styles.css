@@ -1,115 +1,172 @@
 :root {
-    --bg-colour: #060b13;
-    --panel-bg: #111a27;
-    --accent: #00d2ff;
-    --accent-hover: #3a86ff;
-    --text-main: #e2e8f0;
+    --bg-colour: #030712;
+    --panel-bg: #0f172a;
+    --panel-border: #1e293b;
+    --accent: #00f0ff;
+    --accent-hover: #38bdf8;
+    --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --danger: #ef4444;
+    --danger: #f43f5e;
+    --glow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
 body {
     margin: 0;
-    padding: 20px;
+    padding: 40px 20px;
     background-color: var(--bg-colour);
+    background-image: radial-gradient(circle at center, #0a1128 0%, #030712 100%);
     color: var(--text-main);
     font-family: 'Segoe UI', system-ui, sans-serif;
     display: flex;
     justify-content: center;
+    min-height: 100vh;
 }
 
 .container {
     display: grid;
-    grid-template-columns: 300px 400px 300px;
-    gap: 20px;
-    max-width: 1200px;
+    grid-template-columns: 280px 450px 280px;
+    gap: 24px;
+    max-width: 1100px;
     width: 100%;
 }
 
 .panel {
     background-color: var(--panel-bg);
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #1e293b;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Typography */
 h1, h2, h3 {
     margin-top: 0;
     color: var(--accent);
+    text-shadow: var(--glow);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#heatDisplay {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.story-panel {
+    border-top: 3px solid var(--text-muted);
 }
 
 #storyLog {
     font-style: italic;
     color: var(--text-muted);
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 0.95rem;
 }
 
-/* Core Clicker */
 .currencies {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+}
+
+/* Pulsing Circular Vent Button */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
+    70% { box-shadow: 0 0 0 20px rgba(0, 240, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
 }
 
 .clicker-btn {
-    width: 100%;
-    height: 100px;
-    font-size: 1.5rem;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 40px auto;
+    display: block;
+    font-size: 1.2rem;
     font-weight: bold;
-    background-color: transparent;
+    text-transform: uppercase;
+    background-color: rgba(0, 240, 255, 0.05);
     color: var(--accent);
-    border: 2px dashed var(--accent);
-    border-radius: 8px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
     cursor: pointer;
     transition: all 0.1s ease;
-    margin-bottom: 30px;
+    animation: pulse 2s infinite;
 }
 
 .clicker-btn:active {
-    background-color: rgba(0, 210, 255, 0.1);
-    transform: scale(0.98);
+    background-color: rgba(0, 240, 255, 0.2);
+    transform: scale(0.95);
+    animation: none;
 }
 
-/* Upgrades Store */
+/* Floating Particles */
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+}
+
+.floating-text {
+    position: fixed;
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 1.2rem;
+    pointer-events: none;
+    text-shadow: 0 0 5px var(--accent);
+    animation: floatUp 0.8s ease-out forwards;
+    z-index: 100;
+}
+
+.store h2 {
+    font-size: 1.2rem;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
 .upgrade-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.02);
     padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.upgrade-item:hover {
+    border-color: rgba(0, 240, 255, 0.3);
 }
 
 .upgrade-item p {
-    margin: 5px 0 0 0;
-    font-size: 0.9rem;
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
     color: var(--text-muted);
 }
 
 button {
-    background-color: var(--accent-hover);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    background-color: var(--panel-bg);
+    color: var(--text-main);
+    border: 1px solid var(--accent-hover);
+    padding: 10px 16px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
+    transition: all 0.2s;
 }
 
 button:hover {
-    background-color: var(--accent);
+    background-color: var(--accent-hover);
+    color: #000;
+    box-shadow: var(--glow);
 }
 
-/* Prestige */
 .prestige-btn {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 25px;
     background-color: transparent;
     border: 1px solid var(--danger);
     color: var(--danger);
@@ -117,25 +174,25 @@ button:hover {
 }
 
 .prestige-btn:hover {
-    background-color: rgba(239, 68, 68, 0.1);
+    background-color: var(--danger);
+    color: white;
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
 }
 
-/* Skill Tree */
 .skill-grid {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .skill-btn {
-    background-color: transparent;
-    border: 1px solid var(--accent-hover);
-    color: var(--text-main);
     text-align: left;
     padding: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .skill-btn.unlocked {
-    background-color: rgba(0, 210, 255, 0.15);
+    background-color: rgba(0, 240, 255, 0.1);
     border-color: var(--accent);
+    color: var(--accent);
 }
