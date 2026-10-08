@@ -1,4 +1,5 @@
 let state = {
+    saveVersion: 2, // Version bump forces a wipe of the old broken economy
     heat: 0n,
     totalHeatEarned: 0n,
     biomassMultiplier: 1n,
@@ -6,23 +7,23 @@ let state = {
     unlockedSkills: [],
     storyIndex: 0,
     upgrades: {
-        bacteria: { count: 1n, cost: 50n, baseOutput: 2n, baseTime: 1000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
-        tubeWorms: { count: 0n, cost: 500n, baseOutput: 15n, baseTime: 3000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
-        vent: { count: 0n, cost: 5000n, baseOutput: 150n, baseTime: 10000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 250000n },
-        magma: { count: 0n, cost: 50000n, baseOutput: 2000n, baseTime: 30000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
+        bacteria: { count: 1n, cost: 10n, baseOutput: 1n, baseTime: 2000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
+        tubeWorms: { count: 0n, cost: 1000n, baseOutput: 60n, baseTime: 6000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
+        vent: { count: 0n, cost: 40000n, baseOutput: 540n, baseTime: 20000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 100000n },
+        magma: { count: 0n, cost: 1500000n, baseOutput: 8000n, baseTime: 60000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
     }
 };
 
 let surgeActive = false;
 let surgeCooldown = 0;
 let lastTick = Date.now();
-let buyMode = '1'; // Can be '1', '10', or 'Max'
+let buyMode = '1'; 
 
 const storyMilestones = [
     { threshold: 0n, text: "A spark in the dark. The water is freezing, but the rock is warm. Grow." },
-    { threshold: 100n, text: "Chemosynthesis achieved. The first cells divide. You are no longer alone." },
-    { threshold: 5000n, text: "An oasis forms. Tube worms anchor to the basalt. The ecosystem thrives, but space is limited." },
-    { threshold: 100000n, text: "The vent is dying. Condense your mass. Mutate. Prepare to drift in the current." }
+    { threshold: 1000n, text: "Chemosynthesis achieved. The first cells divide. You are no longer alone." },
+    { threshold: 50000n, text: "An oasis forms. Tube worms anchor to the basalt. The ecosystem thrives, but space is limited." },
+    { threshold: 1000000n, text: "The vent is dying. Condense your mass. Mutate. Prepare to drift in the current." }
 ];
 
 const skillNodes = {
@@ -30,13 +31,10 @@ const skillNodes = {
     "cheaper_bacteria": { cost: 3n, requires: [] }
 };
 
-const speedMilestones = [25n, 50n, 100n, 250n, 500n, 1000n];
-
-// UI Control Functions
+// UI Control
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
     document.getElementById(tabId).classList.add('active-tab');
     document.getElementById('btn_' + tabId).classList.add('active');
 }
@@ -51,7 +49,7 @@ function setBuyMode(mode) {
 function activateSurge() {
     if (surgeCooldown <= 0) {
         surgeActive = true;
-        surgeCooldown = 60;
+        surgeCooldown = 120; // Nerfed to 2 minutes
         setTimeout(() => {
             surgeActive = false;
             updateUI();
@@ -60,12 +58,75 @@ function activateSurge() {
     }
 }
 
+// Dynamic Math Models
+function getActualTime(key) {
+    let upg = state.upgrades[key];
+    let divs = 1;
+    // Speed milestones at 50, 100, 200
+    if (upg.count >= 50n) divs *= 2;
+    if (upg.count >= 100n) divs *= 2;
+    if (upg.count >= 200n) divs *= 2;
+    return Math.max(50, Math.floor(upg.baseTime / divs));
+}
+
+function getMilestoneMultiplier(level) {
+    let mult = 1n;
+    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n];
+    thresholds.forEach(t => {
+        if (level >= t) mult *= 2n;
+    });
+    return mult;
+}
+
+function calculatePayout(key) {
+    let upg = state.upgrades[key];
+    if (upg.count === 0n) return 0n;
+
+    let multiplier = getMilestoneMultiplier(upg.count);
+    multiplier *= state.biomassMultiplier;
+    
+    if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
+    if (surgeActive) multiplier *= 3n; // Nerfed from x5
+    
+    return upg.count * upg.baseOutput * multiplier;
+}
+
+function getBulkCostInfo(key) {
+    let upg = state.upgrades[key];
+    let tempCost = upg.cost;
+    let totalCost = 0n;
+    let itemsToBuy = 0n;
+    
+    let targetAmount = buyMode === '1' ? 1n : (buyMode === '10' ? 10n : 9999n); 
+
+    for(let i = 0n; i < targetAmount; i++) {
+        let actualCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
+            actualCost = (tempCost * 80n) / 100n;
+        }
+
+        if (buyMode === 'Max' && state.heat < (totalCost + actualCost)) break;
+
+        totalCost += actualCost;
+        itemsToBuy++;
+        tempCost = (tempCost * 115n) / 100n; // Standard 1.15x curve, no artificial spikes
+    }
+    
+    if (itemsToBuy === 0n && buyMode === 'Max') {
+        let fallbackCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) fallbackCost = (tempCost * 80n) / 100n;
+        return { count: 0n, cost: fallbackCost };
+    }
+
+    return { count: itemsToBuy, cost: totalCost };
+}
+
+// Interaction
 function triggerCycle(key, event) {
     let upg = state.upgrades[key];
     if (upg.count > 0n && !upg.isRunning) {
         upg.isRunning = true;
-        upg.timeRemaining = upg.baseTime;
-        
+        upg.timeRemaining = getActualTime(key);
         if (event) spawnFloatingText(event, "Running!");
     }
 }
@@ -80,61 +141,6 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
-// Core Math Functions
-function calculatePayout(key) {
-    let upg = state.upgrades[key];
-    if (upg.count === 0n) return 0n;
-
-    let multiplier = 3n ** (upg.count / 10n); // 3x multiplier every 10 levels
-    multiplier *= state.biomassMultiplier;
-    
-    if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
-    if (surgeActive) multiplier *= 5n;
-    
-    return upg.count * upg.baseOutput * multiplier;
-}
-
-// Simulates future purchases to determine bulk cost exactly
-function getBulkCostInfo(key) {
-    let upg = state.upgrades[key];
-    let tempCost = upg.cost;
-    let totalCost = 0n;
-    let itemsToBuy = 0n;
-    let simulatedLevel = upg.count;
-    
-    let targetAmount = buyMode === '1' ? 1n : (buyMode === '10' ? 10n : 9999n); // 9999 acts as 'Max'
-
-    for(let i = 0n; i < targetAmount; i++) {
-        let actualCost = tempCost;
-        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
-            actualCost = (tempCost * 80n) / 100n;
-        }
-
-        if (buyMode === 'Max' && state.heat < (totalCost + actualCost)) {
-            break;
-        }
-
-        totalCost += actualCost;
-        itemsToBuy++;
-        simulatedLevel++;
-
-        if (simulatedLevel % 10n === 0n) {
-            tempCost = tempCost * 4n; // Cost spike
-        } else {
-            tempCost = (tempCost * 115n) / 100n; // Standard exponential increase
-        }
-    }
-    
-    // Fallback if they can't afford even 1 on Max mode
-    if (itemsToBuy === 0n && buyMode === 'Max') {
-        let fallbackCost = tempCost;
-        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) fallbackCost = (tempCost * 80n) / 100n;
-        return { count: 0n, cost: fallbackCost };
-    }
-
-    return { count: itemsToBuy, cost: totalCost };
-}
-
 function buyUpgrade(key) {
     let bulkInfo = getBulkCostInfo(key);
     if (bulkInfo.count === 0n || state.heat < bulkInfo.cost) return;
@@ -144,17 +150,7 @@ function buyUpgrade(key) {
 
     for(let i = 0n; i < bulkInfo.count; i++) {
         upg.count++;
-        
-        // Speed Milestone Check
-        if (speedMilestones.includes(upg.count)) {
-            upg.baseTime = Math.max(50, Math.floor(upg.baseTime / 2)); // Halve time, cap at 50ms tick limit
-        }
-
-        if (upg.count % 10n === 0n) {
-            upg.cost = upg.cost * 4n;
-        } else {
-            upg.cost = (upg.cost * 115n) / 100n;
-        }
+        upg.cost = (upg.cost * 115n) / 100n;
     }
     updateUI();
 }
@@ -166,7 +162,7 @@ function buyManager(key) {
         upg.automated = true;
         if (!upg.isRunning && upg.count > 0n) {
             upg.isRunning = true;
-            upg.timeRemaining = upg.baseTime;
+            upg.timeRemaining = getActualTime(key);
         }
         updateUI();
     }
@@ -184,13 +180,14 @@ function unlockSkill(skillId) {
 }
 
 function prestige() {
-    const prestigeThreshold = 100000n;
+    const prestigeThreshold = 1000000n; // Pushed back to 1 Million
     if (state.totalHeatEarned < prestigeThreshold) return;
 
-    let newBiomass = state.totalHeatEarned / 50000n; 
-    let newMutationPoints = 1n + (state.totalHeatEarned / 200000n);
+    let newBiomass = state.totalHeatEarned / 500000n; 
+    let newMutationPoints = 1n + (state.totalHeatEarned / 2000000n);
 
     state = {
+        saveVersion: 2,
         heat: 0n,
         totalHeatEarned: 0n,
         biomassMultiplier: state.biomassMultiplier + newBiomass,
@@ -198,10 +195,10 @@ function prestige() {
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
         upgrades: {
-            bacteria: { count: 1n, cost: 50n, baseOutput: 2n, baseTime: 1000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
-            tubeWorms: { count: 0n, cost: 500n, baseOutput: 15n, baseTime: 3000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
-            vent: { count: 0n, cost: 5000n, baseOutput: 150n, baseTime: 10000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 250000n },
-            magma: { count: 0n, cost: 50000n, baseOutput: 2000n, baseTime: 30000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
+            bacteria: { count: 1n, cost: 10n, baseOutput: 1n, baseTime: 2000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
+            tubeWorms: { count: 0n, cost: 1000n, baseOutput: 60n, baseTime: 6000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
+            vent: { count: 0n, cost: 40000n, baseOutput: 540n, baseTime: 20000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 100000n },
+            magma: { count: 0n, cost: 1500000n, baseOutput: 8000n, baseTime: 60000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
         }
     };
     switchTab('tab_store');
@@ -218,7 +215,7 @@ function checkStory() {
     }
 }
 
-// Saving & Loading
+// System
 function saveGame() {
     const serialized = JSON.stringify(state, (key, value) => 
         typeof value === 'bigint' ? value.toString() + 'n' : value
@@ -236,8 +233,9 @@ function loadGame() {
                 return value;
             });
             
-            if (typeof loadedState.upgrades.bacteria.baseTime === 'undefined') {
-                throw new Error("Old structure detected. Migrating to AdCap layout.");
+            // Hard wipe for economy balance update
+            if (loadedState.saveVersion !== 2) {
+                throw new Error("Economy Rebalance: Forcing fresh save.");
             }
             
             state = loadedState;
@@ -249,28 +247,29 @@ function loadGame() {
             keys.forEach(key => {
                 let upg = state.upgrades[key];
                 if (upg.automated && upg.count > 0n) {
-                    let cycles = BigInt(Math.floor(offlineMs / upg.baseTime));
+                    let actualTimeMs = getActualTime(key);
+                    let cycles = BigInt(Math.floor(offlineMs / actualTimeMs));
                     let offlinePayout = calculatePayout(key) * cycles;
                     state.heat += offlinePayout;
                     state.totalHeatEarned += offlinePayout;
                 }
             });
         } catch (e) {
-            console.log("Incompatible save found. Starting fresh.");
+            console.log(e.message);
             localStorage.removeItem('abyssalSave');
         }
     }
 }
 
 function getNextMilestoneText(currentLevel) {
-    let next10 = ((currentLevel / 10n) + 1n) * 10n;
-    let nextSpeed = speedMilestones.find(m => m > currentLevel);
+    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n];
+    let next = thresholds.find(m => m > currentLevel);
     
-    if (nextSpeed && nextSpeed < next10) {
-        return `Next Boost: Lvl ${nextSpeed} (Speed x2)`;
-    } else {
-        return `Next Boost: Lvl ${next10} (Output x3)`;
+    if (!next) return "Max Boosts Reached";
+    if ([50n, 100n, 200n].includes(next)) {
+        return `Next Boost: Lvl ${next} (Speed x2 & Output x2)`;
     }
+    return `Next Boost: Lvl ${next} (Output x2)`;
 }
 
 function updateUI() {
@@ -286,8 +285,8 @@ function updateUI() {
         
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
         document.getElementById('output_' + key).innerText = "Output: " + calculatePayout(key).toString();
-        
         document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
+        
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
         let managerBtn = document.getElementById('manager_' + key);
@@ -304,6 +303,7 @@ function updateUI() {
         let fill = document.getElementById('fill_' + key);
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
+        let actualTimeMs = getActualTime(key);
         
         if (upg.count === 0n) {
             bar.style.backgroundColor = "#0f172a";
@@ -311,13 +311,13 @@ function updateUI() {
             timeText.innerText = "Locked";
             bar.style.cursor = "not-allowed";
         } else if (upg.isRunning) {
-            let progressPercent = 100 - ((upg.timeRemaining / upg.baseTime) * 100);
+            let progressPercent = 100 - ((upg.timeRemaining / actualTimeMs) * 100);
             fill.style.width = progressPercent + "%";
             timeText.innerText = (upg.timeRemaining / 1000).toFixed(1) + "s";
             bar.style.cursor = upg.automated ? "default" : "not-allowed";
         } else {
             fill.style.width = "0%";
-            timeText.innerText = "Run (" + (upg.baseTime / 1000).toFixed(1) + "s)";
+            timeText.innerText = "Run (" + (actualTimeMs / 1000).toFixed(1) + "s)";
             bar.style.cursor = "pointer";
             bar.style.backgroundColor = "#1e293b";
         }
@@ -335,7 +335,7 @@ function updateUI() {
         surgeBtn.innerText = `Geothermal Surge (Ready)`;
     }
     
-    if (state.totalHeatEarned >= 100000n || state.biomassMultiplier > 1n) {
+    if (state.totalHeatEarned >= 1000000n || state.biomassMultiplier > 1n) {
         document.getElementById('prestigeBtn').classList.remove('hidden');
     }
 
@@ -358,7 +358,7 @@ function updateUI() {
 loadGame();
 updateUI();
 
-// High Frequency Loop (Progress Bars)
+// 50ms Tick Loop
 setInterval(() => {
     let now = Date.now();
     let dt = now - lastTick;
@@ -376,7 +376,7 @@ setInterval(() => {
                 state.totalHeatEarned += payout;
                 
                 if (upg.automated) {
-                    upg.timeRemaining = upg.baseTime;
+                    upg.timeRemaining = getActualTime(key);
                 } else {
                     upg.isRunning = false;
                     upg.timeRemaining = 0;
@@ -384,14 +384,14 @@ setInterval(() => {
             }
         } else if (upg.automated && upg.count > 0n) {
             upg.isRunning = true;
-            upg.timeRemaining = upg.baseTime;
+            upg.timeRemaining = getActualTime(key);
         }
     });
     
     updateUI();
 }, 50);
 
-// Slower Loop (Cooldowns and Story)
+// Cooldown & Story Loop
 setInterval(() => {
     if (surgeCooldown > 0) surgeCooldown--;
     checkStory();
