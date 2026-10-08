@@ -216,14 +216,20 @@ function updateUI() {
     const upgradeKeys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
     upgradeKeys.forEach(key => {
         document.getElementById(key + 'Cost').innerText = "Cost: " + getUpgradeCost(key).toString() + " Heat";
-        document.getElementById(key + 'Count').innerText = "Level: " + state.upgrades[key].count.toString();
         
-        let totalOutput = state.upgrades[key].count * state.upgrades[key].output;
+        let currentLevel = state.upgrades[key].count;
+        document.getElementById(key + 'Count').innerText = "Level: " + currentLevel.toString();
+        
+        let totalOutput = currentLevel * state.upgrades[key].output;
         let outputMultiplier = state.biomassMultiplier;
         if (state.unlockedSkills.includes("heat_efficiency")) outputMultiplier *= 2n;
         if (surgeActive) outputMultiplier *= 5n;
         
         document.getElementById(key + 'Output').innerText = "Total Output: " + (totalOutput * outputMultiplier).toString() + "/s";
+        
+        let nextMilestone = ((currentLevel / 10n) + 1n) * 10n;
+        document.getElementById(key + 'Milestone').innerText = "Next Boost: Lvl " + nextMilestone.toString() + " (3x Output)";
+        
         document.getElementById('btn_' + key).disabled = state.heat < getUpgradeCost(key);
     });
     
