@@ -7,6 +7,7 @@
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --danger: #f43f5e;
+    --success: #22c55e;
     --glow: 0 0 15px rgba(0, 240, 255, 0.4);
 }
 
@@ -24,7 +25,7 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: 280px 450px 280px;
+    grid-template-columns: 280px 480px 280px;
     gap: 24px;
     max-width: 1100px;
     width: 100%;
@@ -38,9 +39,7 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display: none !important; }
 
 h1, h2, h3 {
     margin-top: 0;
@@ -55,9 +54,7 @@ h1, h2, h3 {
     margin-bottom: 5px;
 }
 
-.story-panel {
-    border-top: 3px solid var(--text-muted);
-}
+.story-panel { border-top: 3px solid var(--text-muted); }
 
 #storyLog {
     font-style: italic;
@@ -68,37 +65,7 @@ h1, h2, h3 {
 
 .currencies {
     text-align: center;
-    margin-bottom: 40px;
-}
-
-/* Pulsing Circular Vent Button */
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
-    70% { box-shadow: 0 0 0 20px rgba(0, 240, 255, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
-}
-
-.clicker-btn {
-    width: 160px;
-    height: 160px;
-    margin: 0 auto 40px auto;
-    display: block;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    background-color: rgba(0, 240, 255, 0.05);
-    color: var(--accent);
-    border: 2px solid var(--accent);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    animation: pulse 2s infinite;
-}
-
-.clicker-btn:active {
-    background-color: rgba(0, 240, 255, 0.2);
-    transform: scale(0.95);
-    animation: none;
+    margin-bottom: 25px;
 }
 
 /* Floating Particles */
@@ -118,83 +85,108 @@ h1, h2, h3 {
     z-index: 100;
 }
 
-.store h2 {
-    font-size: 1.2rem;
-    border-bottom: 1px solid var(--panel-border);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+/* AdCap Business Cards */
+.business-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
 }
 
-.upgrade-item {
+.business-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.02);
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border: 1px solid transparent;
-    transition: border-color 0.2s;
+    margin-bottom: 10px;
 }
 
-.upgrade-item:hover {
-    border-color: rgba(0, 240, 255, 0.3);
-}
-
-.upgrade-item p {
-    margin: 4px 0 0 0;
+.level-badge {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 12px;
     font-size: 0.85rem;
-    color: var(--text-muted);
+    font-weight: bold;
 }
 
-button {
+.progress-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    height: 40px;
+}
+
+.progress-bar {
+    flex-grow: 1;
+    background-color: #1e293b;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--panel-border);
+}
+
+.progress-bar:active { transform: scale(0.99); }
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background-color: var(--success);
+    transition: width 0.05s linear;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.buy-btn {
+    width: 80px;
     background-color: var(--panel-bg);
     color: var(--text-main);
     border: 1px solid var(--accent-hover);
-    padding: 10px 16px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 0.8rem;
     font-weight: bold;
-    transition: all 0.2s;
 }
 
-button:hover {
+.buy-btn:hover:not(:disabled) {
     background-color: var(--accent-hover);
     color: #000;
     box-shadow: var(--glow);
 }
 
-.prestige-btn {
-    width: 100%;
-    margin-top: 25px;
-    background-color: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 15px;
-}
-
-.prestige-btn:hover {
-    background-color: var(--danger);
-    color: white;
-    box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
-}
-
-.skill-grid {
+.business-stats {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
 }
 
-.skill-btn {
-    text-align: left;
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.2);
+.manager-btn {
+    background-color: transparent;
+    border: 1px solid #f59e0b;
+    color: #f59e0b;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.75rem;
 }
 
-.skill-btn.unlocked {
-    background-color: rgba(0, 240, 255, 0.1);
-    border-color: var(--accent);
-    color: var(--accent);
+.manager-btn:hover:not(:disabled) {
+    background-color: #f59e0b;
+    color: #000;
 }
 
 button:disabled {
@@ -206,14 +198,18 @@ button:disabled {
 }
 
 .output-text {
-    color: #00f0ff !important;
+    color: var(--accent);
     font-weight: bold;
-    margin-top: 5px !important;
+}
+
+.milestone-text {
+    color: #f59e0b;
+    font-style: italic;
 }
 
 .surge-btn {
     width: 100%;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     background-color: rgba(255, 165, 0, 0.1);
     color: #ffa500;
     border: 1px solid #ffa500;
@@ -222,13 +218,6 @@ button:disabled {
     font-weight: bold;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.surge-btn:hover:not(:disabled) {
-    background-color: #ffa500;
-    color: #000;
-    box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
 }
 
 .surge-active {
@@ -242,9 +231,18 @@ button:disabled {
     to { box-shadow: 0 0 30px rgba(255, 165, 0, 1); }
 }
 
-.milestone-text {
-    font-size: 0.8rem;
-    color: #f59e0b;
-    margin-top: 4px !important;
-    font-style: italic;
+.skill-grid { display: flex; flex-direction: column; gap: 12px; }
+.skill-btn {
+    text-align: left;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--accent-hover);
+    color: var(--text-main);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.skill-btn.unlocked {
+    background-color: rgba(0, 240, 255, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
 }
