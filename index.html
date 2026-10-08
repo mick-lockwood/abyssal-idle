@@ -26,6 +26,10 @@
                 Pulse Vent
             </button>
 
+            <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
+                Geothermal Surge (Ready)
+            </button>
+            
             <!-- Upgrades Store -->
             <div class="store">
                 <h2>Oasis Upgrades</h2>
@@ -35,7 +39,7 @@
                         <p id="bacteriaCost">Cost: 50 Heat</p>
                         <p id="bacteriaCount">Owned: 0</p>
                     </div>
-                    <button onclick="buyUpgrade('bacteria')">Evolve</button>
+                    <button id="btn_bacteria" onclick="buyUpgrade('bacteria')">Evolve</button>
                 </div>
                 
                 <div class="upgrade-item">
@@ -44,15 +48,27 @@
                         <p id="tubeWormsCost">Cost: 500 Heat</p>
                         <p id="tubeWormsCount">Owned: 0</p>
                     </div>
-                    <button onclick="buyUpgrade('tubeWorms')">Anchor</button>
+                    <button id="btn_tubeWorms" onclick="buyUpgrade('tubeWorms')">Anchor</button>
+                </div>
+            
+                <div class="upgrade-item">
+                    <div>
+                        <strong>Thermal Vent</strong>
+                        <p id="ventCost">Cost: 5000 Heat</p>
+                        <p id="ventCount">Owned: 0</p>
+                    </div>
+                    <button id="btn_vent" onclick="buyUpgrade('vent')">Excavate</button>
+                </div>
+                
+                <div class="upgrade-item">
+                    <div>
+                        <strong>Magma Chamber</strong>
+                        <p id="magmaCost">Cost: 50000 Heat</p>
+                        <p id="magmaCount">Owned: 0</p>
+                    </div>
+                    <button id="btn_magma" onclick="buyUpgrade('magma')">Tap Core</button>
                 </div>
             </div>
-
-            <!-- Prestige Reset -->
-            <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
-                Collapse & Mutate (Requires 100,000 Heat)
-            </button>
-        </div>
 
         <!-- Skill Tree Panel -->
         <div id="skillTreePanel" class="panel skill-panel hidden">
