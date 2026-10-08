@@ -33,12 +33,12 @@ const skillNodes = {
 function activateSurge() {
     if (surgeCooldown <= 0) {
         surgeActive = true;
-        surgeCooldown = 60; 
+        surgeCooldown = 60; // 60 seconds cooldown
         
         setTimeout(() => {
             surgeActive = false;
             updateUI();
-        }, 10000); // Lasts 10 seconds
+        }, 10000); // Ability lasts 10 seconds
         
         updateUI();
     }
@@ -46,7 +46,6 @@ function activateSurge() {
 
 function generateHeatClick(event) {
     let currentClick = state.clickPower;
-    
     if (state.unlockedSkills.includes("double_click")) {
         currentClick *= 2n;
     }
@@ -61,7 +60,6 @@ function generateHeatClick(event) {
     if (event) {
         spawnFloatingText(event, "+" + generated.toString());
     }
-    
     updateUI();
 }
 
@@ -84,7 +82,7 @@ function calculatePassiveHeat() {
     
     let multiplier = state.biomassMultiplier;
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
-    if (surgeActive) multiplier *= 5n;
+    if (surgeActive) multiplier *= 5n; // Surge multiplies passive income too
     
     return passive * multiplier;
 }
@@ -102,8 +100,17 @@ function buyUpgrade(upgradeKey) {
 
     if (state.heat >= currentCost) {
         state.heat -= currentCost;
-        state.upgrades[upgradeKey].count += 1n;
-        state.upgrades[upgradeKey].cost = (state.upgrades[upgradeKey].cost * 115n) / 100n; 
+        let upgrade = state.upgrades[upgradeKey];
+        upgrade.count += 1n;
+
+        // MILESTONE MECHANIC: Every 10 levels, massive boost and cost spike
+        if (upgrade.count % 10n === 0n) {
+            upgrade.output *= 3n; // 3x permanent output multiplier
+            upgrade.cost = upgrade.cost * 4n; // 4x cost spike
+        } else {
+            upgrade.cost = (upgrade.cost * 115n) / 100n; // Standard 15% increase
+        }
+        
         updateUI();
     }
 }
@@ -170,16 +177,18 @@ function loadGame() {
     if (saved) {
         try {
             let loadedState = JSON.parse(saved, (key, value) => {
-                if (typeof value === 'string' && value.endsWith('n')) {
-                    return BigInt(value.slice(0, -1));
-                }
+                if (typeof value === 'string' && value.endsWith('n')) return BigInt(value.slice(0, -1));
                 return value;
             });
             
             if (typeof loadedState.heat !== 'bigint') throw new Error("Old save version detected");
             
-            // Merge upgrades to safely load older save files lacking new items
-            state.upgrades = { ...state.upgrades, ...loadedState.upgrades };
+            // Safe merge to retain progress but pull in new upgrades (like vent and magma)
+            for (let key in state.upgrades) {
+                if (loadedState.upgrades && loadedState.upgrades[key]) {
+                    state.upgrades[key] = { ...state.upgrades[key], ...loadedState.upgrades[key] };
+                }
+            }
             state.heat = loadedState.heat;
             state.totalHeatEarned = loadedState.totalHeatEarned;
             state.clickPower = loadedState.clickPower || 1n;
@@ -207,12 +216,19 @@ function updateUI() {
     const upgradeKeys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
     upgradeKeys.forEach(key => {
         document.getElementById(key + 'Cost').innerText = "Cost: " + getUpgradeCost(key).toString() + " Heat";
-        document.getElementById(key + 'Count').innerText = "Owned: " + state.upgrades[key].count.toString();
+        document.getElementById(key + 'Count').innerText = "Level: " + state.upgrades[key].count.toString();
+        
+        let totalOutput = state.upgrades[key].count * state.upgrades[key].output;
+        let outputMultiplier = state.biomassMultiplier;
+        if (state.unlockedSkills.includes("heat_efficiency")) outputMultiplier *= 2n;
+        if (surgeActive) outputMultiplier *= 5n;
+        
+        document.getElementById(key + 'Output').innerText = "Total Output: " + (totalOutput * outputMultiplier).toString() + "/s";
         document.getElementById('btn_' + key).disabled = state.heat < getUpgradeCost(key);
     });
     
     const surgeBtn = document.getElementById('surgeBtn');
-    const clickerBtn = document.querySelector('.clicker-btn');
+    const clickerBtn = document.getElementById('ventClicker');
     
     if (surgeCooldown > 0 && !surgeActive) {
         surgeBtn.disabled = true;
