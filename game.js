@@ -27,7 +27,6 @@ const skillNodes = {
 };
 
 // 2. Core Mechanics
-// Update the click generation function to accept the event parameter
 function generateHeatClick(event) {
     let currentClick = state.clickPower;
     
@@ -39,7 +38,6 @@ function generateHeatClick(event) {
     state.heat += generated;
     state.totalHeatEarned += generated;
     
-    // Trigger the visual particle effect if an event was passed
     if (event) {
         spawnFloatingText(event, "+" + generated.toString());
     }
@@ -47,19 +45,16 @@ function generateHeatClick(event) {
     updateUI();
 }
 
-// Add this new function to the bottom of game.js
 function spawnFloatingText(event, text) {
     const element = document.createElement('div');
     element.innerText = text;
     element.className = 'floating-text';
     
-    // Offset slightly so the text spawns exactly at the cursor tip
     element.style.left = (event.clientX - 10) + 'px';
     element.style.top = (event.clientY - 20) + 'px';
     
     document.body.appendChild(element);
     
-    // Remove the DOM element after the CSS animation completes
     setTimeout(() => {
         element.remove();
     }, 800);
@@ -138,14 +133,21 @@ function checkStory() {
     let nextMilestone = storyMilestones[state.storyIndex];
     
     if (state.totalHeatEarned >= nextMilestone.threshold) {
-        // Link this to your DOM, e.g., document.getElementById('storyLog').innerText = nextMilestone.text;
-        console.log(nextMilestone.text); 
+        document.getElementById('storyLog').innerText = nextMilestone.text; 
         state.storyIndex++;
         checkStory(); 
     }
 }
 
-// 4. Saving & Loading with BigInt Serialization
+// 4. Saving & Loading
+function saveGame() {
+    const serialized = JSON.stringify(state, (key, value) => 
+        typeof value === 'bigint' ? value.toString() + 'n' : value
+    );
+    localStorage.setItem('abyssalSave', serialized);
+    localStorage.setItem('lastSaveTime', Date.now().toString());
+}
+
 function loadGame() {
     const saved = localStorage.getItem('abyssalSave');
     if (saved) {
@@ -157,7 +159,6 @@ function loadGame() {
                 return value;
             });
             
-            // Safety check: if the old save didn't use BigInt, wipe it to prevent type errors
             if (typeof loadedState.heat !== 'bigint') {
                 throw new Error("Old save version detected");
             }
@@ -177,25 +178,39 @@ function loadGame() {
     }
 }
 
-function checkStory() {
-    if (state.storyIndex >= storyMilestones.length) return;
-    
-    let nextMilestone = storyMilestones[state.storyIndex];
-    
-    if (state.totalHeatEarned >= nextMilestone.threshold) {
-        // Pushes the story text directly to the DOM
-        document.getElementById('storyLog').innerText = nextMilestone.text; 
-        state.storyIndex++;
-        checkStory(); 
-    }
-}
 function updateUI() {
-    // Target your HTML elements here to display state values
-    // document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
+    document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
+    document.getElementById('bacteriaCost').innerText = "Cost: " + state.upgrades.bacteria.cost.toString() + " Heat";
+    document.getElementById('bacteriaCount').innerText = "Owned: " + state.upgrades.bacteria.count.toString();
+    document.getElementById('tubeWormsCost').innerText = "Cost: " + state.upgrades.tubeWorms.cost.toString() + " Heat";
+    document.getElementById('tubeWormsCount').innerText = "Owned: " + state.upgrades.tubeWorms.count.toString();
+    
+    if (state.totalHeatEarned >= 100000n || state.biomassMultiplier > 1n) {
+        document.getElementById('prestigeBtn').classList.remove('hidden');
+    }
+
+    if (state.biomassMultiplier > 1n) {
+        document.getElementById('biomassDisplay').classList.remove('hidden');
+        document.getElementById('mutationDisplay').classList.remove('hidden');
+        document.getElementById('skillTreePanel').classList.remove('hidden');
+        
+        document.getElementById('biomassDisplay').innerText = "Biomass Multiplier: x" + state.biomassMultiplier.toString();
+        document.getElementById('mutationDisplay').innerText = "Mutation Points: " + state.mutationPoints.toString();
+    }
+
+    state.unlockedSkills.forEach(skillId => {
+        let btn = document.getElementById('skill_' + skillId);
+        if (btn) {
+            btn.classList.add('unlocked');
+            btn.innerText = btn.innerText.replace(/Cost:.*/, "(Unlocked)");
+            btn.disabled = true;
+        }
+    });
 }
 
-// 5. Initialization & Game Loop
+// 5. Initialisation & Game Loop
 loadGame();
+updateUI(); // Forces the UI to reflect the loaded state immediately
 
 setInterval(() => {
     let passiveHeat = calculatePassiveHeat();
@@ -207,4 +222,4 @@ setInterval(() => {
     updateUI();
 }, 1000);
 
-setInterval(saveGame, 10000); // Auto-save every 10 seconds
+setInterval(saveGame, 10000);
