@@ -241,3 +241,10 @@ button:disabled {
     from { box-shadow: 0 0 10px rgba(255, 165, 0, 0.5); }
     to { box-shadow: 0 0 30px rgba(255, 165, 0, 1); }
 }
+
+.milestone-text {
+    font-size: 0.8rem;
+    color: #f59e0b;
+    margin-top: 4px !important;
+    font-style: italic;
+}
