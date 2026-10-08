@@ -12,7 +12,7 @@
         <!-- Navigation Tabs -->
         <div class="nav-tabs">
             <button id="btn_tab_store" class="tab-btn active" onclick="switchTab('tab_store')">Oasis</button>
-            <button id="btn_tab_evolution" class="tab-btn hidden" onclick="switchTab('tab_evolution')">Mutations</button>
+            <button id="btn_tab_evolution" class="tab-btn" onclick="switchTab('tab_evolution')">Mutations</button>
             <button id="btn_tab_story" class="tab-btn" onclick="switchTab('tab_story')">Logs</button>
         </div>
 
@@ -139,28 +139,40 @@
 
         <!-- Evolution Tab (Skill Tree) -->
         <div id="tab_evolution" class="panel tab-content hidden">
-            <h3 id="biomassDisplay">Biomass Multiplier: x1</h3>
-            <h3 id="mutationDisplay">Mutation Points: 0</h3>
-            <hr style="border-color: #1e293b; margin: 20px 0;">
+            <!-- Locked Screen -->
+            <div id="evolutionLocked" class="locked-screen">
+                <h3>Evolution Locked</h3>
+                <p>You must reach 1,000,000 Heat to Collapse & Mutate before accessing the Skill Tree.</p>
+            </div>
             
-            <div class="skill-grid">
-                <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
-                    <strong>Thermal Efficiency</strong><br>
-                    2x All Outputs<br>
-                    Cost: 2 MP
-                </button>
-                <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
-                    <strong>Symbiosis</strong><br>
-                    Bacteria cost -20%<br>
-                    Cost: 3 MP
-                </button>
+            <!-- Content (Hidden until Prestiging) -->
+            <div id="evolutionContent" class="hidden">
+                <h3 id="biomassDisplay">Biomass Multiplier: x1</h3>
+                <h3 id="mutationDisplay">Mutation Points: 0</h3>
+                <hr style="border-color: #1e293b; margin: 20px 0;">
+                
+                <div class="skill-grid">
+                    <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
+                        <strong>Thermal Efficiency</strong><br>
+                        2x All Outputs<br>
+                        Cost: 2 MP
+                    </button>
+                    <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
+                        <strong>Symbiosis</strong><br>
+                        Bacteria cost -20%<br>
+                        Cost: 3 MP
+                    </button>
+                </div>
             </div>
         </div>
-
+        
         <!-- Logs Tab (Story) -->
         <div id="tab_story" class="panel tab-content hidden">
-            <h2>The Abyss</h2>
-            <p id="storyLog">A spark in the dark. The water is freezing, but the rock is warm. Grow.</p>
+            <h2>Abyssal Logs</h2>
+            <p style="color: #22c55e; font-size: 0.85rem; margin-bottom: 20px;">
+                Every unlocked log provides a global +25% output bonus.
+            </p>
+            <div id="storyLogContainer"></div>
         </div>
 
     </div>
