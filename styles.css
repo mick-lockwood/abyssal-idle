@@ -246,3 +246,68 @@ button:disabled {
     border-color: var(--accent);
     color: var(--accent);
 }
+
+/* Navigation Tabs */
+.nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    grid-column: 1 / -1; /* Spans across all grid columns */
+}
+
+.tab-btn {
+    background-color: var(--panel-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--panel-border);
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tab-btn.active {
+    background-color: rgba(0, 240, 255, 0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.tab-content {
+    display: none;
+    grid-column: 1 / -1;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.active-tab {
+    display: block;
+}
+
+/* Bulk Buy Controls */
+.buy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.toggle-btn {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--panel-border);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.toggle-btn.active-toggle {
+    background-color: var(--accent-hover);
+    color: #000;
+    border-color: var(--accent-hover);
+}
