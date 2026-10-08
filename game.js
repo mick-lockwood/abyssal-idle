@@ -27,7 +27,8 @@ const skillNodes = {
 };
 
 // 2. Core Mechanics
-function generateHeatClick() {
+// Update the click generation function to accept the event parameter
+function generateHeatClick(event) {
     let currentClick = state.clickPower;
     
     if (state.unlockedSkills.includes("double_click")) {
@@ -37,7 +38,31 @@ function generateHeatClick() {
     const generated = currentClick * state.biomassMultiplier;
     state.heat += generated;
     state.totalHeatEarned += generated;
+    
+    // Trigger the visual particle effect if an event was passed
+    if (event) {
+        spawnFloatingText(event, "+" + generated.toString());
+    }
+    
     updateUI();
+}
+
+// Add this new function to the bottom of game.js
+function spawnFloatingText(event, text) {
+    const element = document.createElement('div');
+    element.innerText = text;
+    element.className = 'floating-text';
+    
+    // Offset slightly so the text spawns exactly at the cursor tip
+    element.style.left = (event.clientX - 10) + 'px';
+    element.style.top = (event.clientY - 20) + 'px';
+    
+    document.body.appendChild(element);
+    
+    // Remove the DOM element after the CSS animation completes
+    setTimeout(() => {
+        element.remove();
+    }, 800);
 }
 
 function calculatePassiveHeat() {
@@ -121,34 +146,49 @@ function checkStory() {
 }
 
 // 4. Saving & Loading with BigInt Serialization
-function saveGame() {
-    const serialized = JSON.stringify(state, (key, value) => 
-        typeof value === 'bigint' ? value.toString() + 'n' : value
-    );
-    localStorage.setItem('abyssalSave', serialized);
-    localStorage.setItem('lastSaveTime', Date.now().toString());
-}
-
 function loadGame() {
     const saved = localStorage.getItem('abyssalSave');
     if (saved) {
-        state = JSON.parse(saved, (key, value) => {
-            if (typeof value === 'string' && value.endsWith('n')) {
-                return BigInt(value.slice(0, -1));
+        try {
+            let loadedState = JSON.parse(saved, (key, value) => {
+                if (typeof value === 'string' && value.endsWith('n')) {
+                    return BigInt(value.slice(0, -1));
+                }
+                return value;
+            });
+            
+            // Safety check: if the old save didn't use BigInt, wipe it to prevent type errors
+            if (typeof loadedState.heat !== 'bigint') {
+                throw new Error("Old save version detected");
             }
-            return value;
-        });
-        
-        const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
-        // Calculate seconds elapsed while offline
-        const secondsOffline = BigInt(Math.floor((Date.now() - lastTime) / 1000));
-        const offlineEarnings = calculatePassiveHeat() * secondsOffline;
-        
-        state.heat += offlineEarnings;
-        state.totalHeatEarned += offlineEarnings;
+            
+            state = loadedState;
+            
+            const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
+            const secondsOffline = BigInt(Math.floor((Date.now() - lastTime) / 1000));
+            const offlineEarnings = calculatePassiveHeat() * secondsOffline;
+            
+            state.heat += offlineEarnings;
+            state.totalHeatEarned += offlineEarnings;
+        } catch (e) {
+            console.log("Incompatible save found. Starting fresh.");
+            localStorage.removeItem('abyssalSave');
+        }
     }
 }
 
+function checkStory() {
+    if (state.storyIndex >= storyMilestones.length) return;
+    
+    let nextMilestone = storyMilestones[state.storyIndex];
+    
+    if (state.totalHeatEarned >= nextMilestone.threshold) {
+        // Pushes the story text directly to the DOM
+        document.getElementById('storyLog').innerText = nextMilestone.text; 
+        state.storyIndex++;
+        checkStory(); 
+    }
+}
 function updateUI() {
     // Target your HTML elements here to display state values
     // document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
