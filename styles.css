@@ -20,6 +20,7 @@ body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     display: flex;
     justify-content: center;
+    align-items: flex-start; /* THIS FIXES THE STRETCHING */
     min-height: 100vh;
 }
 
