@@ -86,7 +86,7 @@ h1, h2, h3 {
     z-index: 100;
 }
 
-/* AdCap Business Cards */
+/* Business Cards */
 .business-card {
     background-color: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--panel-border);
@@ -230,6 +230,38 @@ button:disabled {
 @keyframes surgePulse {
     from { box-shadow: 0 0 10px rgba(255, 165, 0, 0.5); }
     to { box-shadow: 0 0 30px rgba(255, 165, 0, 1); }
+}
+
+.prestige-btn {
+    width: 100%;
+    margin-top: 25px;
+    background-color: rgba(244, 63, 94, 0.05);
+    border: 2px solid var(--danger);
+    color: var(--danger);
+    padding: 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+    animation: pulseDanger 2s infinite;
+}
+
+.prestige-btn:hover {
+    background-color: var(--danger);
+    color: white;
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.6);
+    transform: translateY(-2px);
+    animation: none;
+}
+
+@keyframes pulseDanger {
+    0% { box-shadow: 0 0 10px rgba(244, 63, 94, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.5); }
+    100% { box-shadow: 0 0 10px rgba(244, 63, 94, 0.2); }
 }
 
 .skill-grid { display: flex; flex-direction: column; gap: 12px; }
