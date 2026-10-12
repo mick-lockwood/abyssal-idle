@@ -11,6 +11,8 @@ This game runs entirely in the browser and requires no build tools or servers.
 2. Ensure all three files are in the same folder.
 3. Double-click `index.html` to open it in any modern web browser (Chrome, Firefox, Safari, Edge).
 
+https://mick-lockwood.github.io/abyssal-idle/
+
 ## How to Play
 
 ### 1. The Genesis (Clicking)
