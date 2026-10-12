@@ -444,3 +444,21 @@ button:disabled {
     pointer-events: none;
     z-index: 2;
 }
+
+.hard-reset-btn {
+    grid-column: 1 / -1;
+    margin-top: 40px;
+    background-color: transparent;
+    border: 1px dashed #64748b;
+    color: #64748b;
+    padding: 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hard-reset-btn:hover {
+    background-color: #ef4444;
+    color: white;
+    border-style: solid;
+}
