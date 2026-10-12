@@ -20,7 +20,13 @@
         <div id="tab_store" class="panel tab-content active-tab">
             <div class="currencies">
                 <h1 id="heatDisplay">Heat: 0</h1>
-                <h3 id="opsDisplay" style="color: var(--success); margin-top: 5px;">Overall Output: 0.0/s</h3>
+                <h3 id="opsDisplay" style="color: var(--success); margin-top: 5px; margin-bottom: 15px;">Overall Output: 0.0/s</h3>
+                
+                <!-- Core Temperature Gauge -->
+                <div class="thermometer-container">
+                    <div class="thermometer-fill" id="thermoFill"></div>
+                    <span class="thermometer-text" id="thermoText">0.0% to Collapse</span>
+                </div>
             </div>
             
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
