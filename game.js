@@ -1,4 +1,3 @@
-// Master Configuration Arrays
 const entityConfig = {
     bacteria:  { name: "Chemosynthetic Bacteria", baseCost: 10n, baseOutput: 1n, baseTime: 2000, managerCost: 1000n, managerName: "Bacterial Hive Mind" },
     sponges:   { name: "Deep Sea Sponges", baseCost: 150n, baseOutput: 10n, baseTime: 4000, managerCost: 15000n, managerName: "Current Filterer" },
@@ -11,15 +10,25 @@ const entityConfig = {
 };
 
 const cashUpgrades = [
-    { id: "upg_bac", name: "Thermal Adaptation", desc: "Bacteria output x3", cost: 10000n, target: "bacteria", multiplier: 3n },
-    { id: "upg_spo", name: "Porous Structures", desc: "Sponges output x3", cost: 50000n, target: "sponges", multiplier: 3n },
-    { id: "upg_tub", name: "Deep Roots", desc: "Tube Worms output x3", cost: 500000n, target: "tubeWorms", multiplier: 3n },
-    { id: "upg_ven", name: "Reinforced Walls", desc: "Thermal Vent output x3", cost: 5000000n, target: "vent", multiplier: 3n },
-    { id: "upg_all1", name: "Geothermal Infusion", desc: "All outputs x2", cost: 25000000n, target: "all", multiplier: 2n }
+    { id: "upg_bac1", name: "Thermal Adaptation", desc: "Bacteria output x3", cost: 10000n, target: "bacteria", multiplier: 3n },
+    { id: "upg_spo1", name: "Porous Structures", desc: "Sponges output x3", cost: 50000n, target: "sponges", multiplier: 3n },
+    { id: "upg_tub1", name: "Deep Roots", desc: "Tube Worms output x3", cost: 500000n, target: "tubeWorms", multiplier: 3n },
+    { id: "upg_ven1", name: "Reinforced Walls", desc: "Thermal Vent output x3", cost: 5000000n, target: "vent", multiplier: 3n },
+    { id: "upg_all1", name: "Geothermal Infusion", desc: "All outputs x2", cost: 25000000n, target: "all", multiplier: 2n },
+    { id: "upg_chi1", name: "Rapid Extraction", desc: "Chimney output x3", cost: 100000000n, target: "chimney", multiplier: 3n },
+    { id: "upg_mag1", name: "Superheated Core", desc: "Magma Chamber output x4", cost: 500000000n, target: "magma", multiplier: 4n },
+    { id: "upg_all2", name: "Planetary Sync", desc: "All outputs x3", cost: 5000000000n, target: "all", multiplier: 3n }
 ];
 
+const skillNodes = {
+    "heat_efficiency": { cost: 2n, requires: [] },
+    "cheaper_bacteria": { cost: 2n, requires: [] },
+    "biomass_boost": { cost: 5n, requires: ["heat_efficiency"] },
+    "manager_discount": { cost: 10n, requires: [] }
+};
+
 let state = {
-    saveVersion: 3, 
+    saveVersion: 4, 
     heat: 0n,
     totalHeatEarned: 0n,
     biomassMultiplier: 1n,
@@ -27,6 +36,7 @@ let state = {
     unlockedSkills: [],
     storyIndex: 0,
     purchasedUpgrades: [],
+    prestigeCount: 0n,
     upgrades: {}
 };
 
@@ -39,15 +49,9 @@ const storyMilestones = [
     { threshold: 0n, text: "A spark in the dark. The water is freezing, but the rock is warm. Grow." },
     { threshold: 1000n, text: "Chemosynthesis achieved. The first cells divide. You are no longer alone." },
     { threshold: 50000n, text: "An oasis forms. Tube worms anchor to the basalt. The ecosystem thrives, but space is limited." },
-    { threshold: 1000000n, text: "The vent is dying. Condense your mass. Mutate. Prepare to drift in the current." }
+    { threshold: 1000000n, text: "The vent is dying. Condense your mass. Mutate. Prepare to drift in the current." },
+    { threshold: 50000000n, text: "Drifting complete. The spores settle on a new, highly volatile ridge." }
 ];
-
-const skillNodes = {
-    "heat_efficiency": { cost: 2n, requires: [] },
-    "cheaper_bacteria": { cost: 3n, requires: [] }
-};
-
-// --- Initialization & UI Building ---
 
 function initUI() {
     const storeDiv = document.getElementById('businessStore');
@@ -87,7 +91,7 @@ function initUI() {
                 <div>
                     <strong>${conf.managerName}</strong><br>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">Automates ${conf.name}.</span><br>
-                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${conf.managerCost} Heat</span>
+                    <span class="text-accent" id="manCost_${key}" style="font-size: 0.85rem;">Cost: ${conf.managerCost} Heat</span>
                 </div>
                 <button id="btn_manager_${key}" class="manager-buy-btn" onclick="buyManager('${key}')">Hire</button>
             </div>
@@ -101,7 +105,7 @@ function initUI() {
                 <div>
                     <strong>${u.name}</strong><br>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">${u.desc}</span><br>
-                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${u.cost} Heat</span>
+                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${formatNumber(Number(u.cost))} Heat</span>
                 </div>
                 <button id="btn_upg_${u.id}" class="upgrade-buy-btn" onclick="buyCashUpgrade('${u.id}')">Research</button>
             </div>
@@ -112,8 +116,6 @@ function initUI() {
     managerDiv.innerHTML = managerHTML;
     upgradeDiv.innerHTML = upgHTML;
 }
-
-// --- Interaction & Tabs ---
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
@@ -160,8 +162,6 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
-// --- Math & Math Formatting ---
-
 function getActualTime(key) {
     let upg = state.upgrades[key];
     let conf = entityConfig[key];
@@ -199,6 +199,7 @@ function calculatePayout(key) {
     });
     
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
+    if (state.unlockedSkills.includes("biomass_boost")) multiplier *= 5n;
     if (surgeActive) multiplier *= 3n; 
     
     return upg.count * conf.baseOutput * multiplier;
@@ -209,7 +210,7 @@ function formatNumber(num) {
     if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
     if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
     if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
-    return num.toFixed(1);
+    return typeof num === 'number' ? num.toFixed(1) : num.toString();
 }
 
 function getBulkCostInfo(key) {
@@ -251,8 +252,6 @@ function getBulkCostInfo(key) {
     return { count: itemsToBuy, cost: totalCost };
 }
 
-// --- Purchasing ---
-
 function buyUpgrade(key) {
     let bulkInfo = getBulkCostInfo(key);
     if (bulkInfo.count === 0n || state.heat < bulkInfo.cost) return;
@@ -270,8 +269,14 @@ function buyUpgrade(key) {
 function buyManager(key) {
     let upg = state.upgrades[key];
     let conf = entityConfig[key];
-    if (!upg.automated && state.heat >= conf.managerCost) {
-        state.heat -= conf.managerCost;
+    
+    let actualManagerCost = conf.managerCost;
+    if (state.unlockedSkills.includes("manager_discount")) {
+        actualManagerCost = actualManagerCost / 2n;
+    }
+
+    if (!upg.automated && state.heat >= actualManagerCost) {
+        state.heat -= actualManagerCost;
         upg.automated = true;
         if (!upg.isRunning && upg.count > 0n) {
             upg.isRunning = true;
@@ -294,34 +299,38 @@ function unlockSkill(skillId) {
     const skill = skillNodes[skillId];
     if (!skill || state.unlockedSkills.includes(skillId)) return;
     
-    if (state.mutationPoints >= skill.cost) {
-        state.mutationPoints -= skill.cost;
+    const hasPrerequisites = skill.requires.every(req => state.unlockedSkills.includes(req));
+    
+    if (hasPrerequisites && state.mutationPoints >= BigInt(skill.cost)) {
+        state.mutationPoints -= BigInt(skill.cost);
         state.unlockedSkills.push(skillId);
         updateUI();
     }
 }
 
-// --- Systems ---
+function getPrestigeThreshold() {
+    let base = 1000000n;
+    let multiplier = 10n ** BigInt(state.prestigeCount || 0n);
+    return base * multiplier;
+}
 
 function prestige() {
-    const prestigeThreshold = 1000000n; 
-    
-    // Now requires banked heat rather than lifetime heat
-    if (state.heat < prestigeThreshold) return;
+    const currentThreshold = getPrestigeThreshold();
+    if (state.heat < currentThreshold) return;
 
-    // We keep the actual reward math tied to totalHeatEarned so players 
-    // are still rewarded for their total progression speed over the run
-    let newBiomass = state.totalHeatEarned / 500000n; 
-    let newMutationPoints = 1n + (state.totalHeatEarned / 2000000n);
+    // Biomass is a direct multiplier to output, MP is used for tree unlocks
+    let newBiomass = state.totalHeatEarned / 5000000n; 
+    let newMutationPoints = 1n + (state.totalHeatEarned / 10000000n);
 
     state = {
-        saveVersion: 3,
+        saveVersion: 4,
         heat: 0n,
         totalHeatEarned: 0n,
         biomassMultiplier: state.biomassMultiplier + newBiomass,
         mutationPoints: state.mutationPoints + newMutationPoints,
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
+        prestigeCount: (state.prestigeCount || 0n) + 1n,
         purchasedUpgrades: [],
         upgrades: {}
     };
@@ -346,7 +355,7 @@ function renderStoryLogs() {
     for(let i = 0; i < state.storyIndex; i++) {
         const newLog = document.createElement('div');
         newLog.className = 'story-entry';
-        newLog.innerHTML = `<strong>Log ${i + 1} - ${storyMilestones[i].threshold} Heat Requirement</strong><br>${storyMilestones[i].text}`;
+        newLog.innerHTML = `<strong>Log ${i + 1} - ${formatNumber(Number(storyMilestones[i].threshold))} Heat Req.</strong><br>${storyMilestones[i].text}`;
         container.appendChild(newLog);
     }
 }
@@ -358,7 +367,7 @@ function checkStory() {
         const container = document.getElementById('storyLogContainer');
         const newLog = document.createElement('div');
         newLog.className = 'story-entry';
-        newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${nextMilestone.threshold} Heat Requirement</strong><br>${nextMilestone.text}`;
+        newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${formatNumber(Number(nextMilestone.threshold))} Heat Req.</strong><br>${nextMilestone.text}`;
         container.prepend(newLog);
         
         state.storyIndex++;
@@ -384,7 +393,7 @@ function loadGame() {
                 return value;
             });
             
-            if (loadedState.saveVersion !== 3) throw new Error("Adding new AdCap entities. Forcing fresh save.");
+            if (loadedState.saveVersion !== 4) throw new Error("Hard Reset: Version mismatch.");
             state = loadedState;
             
             const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
@@ -392,7 +401,7 @@ function loadGame() {
             
             Object.keys(entityConfig).forEach(key => {
                 let upg = state.upgrades[key];
-                if (upg.automated && upg.count > 0n) {
+                if (upg && upg.automated && upg.count > 0n) {
                     let actualTimeMs = getActualTime(key);
                     let cycles = BigInt(Math.floor(offlineMs / actualTimeMs));
                     let offlinePayout = calculatePayout(key) * cycles;
@@ -406,7 +415,6 @@ function loadGame() {
         }
     }
     
-    // Inject defaults for any missing state variables after a wipe
     Object.keys(entityConfig).forEach(key => {
         if (!state.upgrades[key]) {
             state.upgrades[key] = { count: key === 'bacteria' ? 1n : 0n, cost: entityConfig[key].baseCost, timeRemaining: 0, isRunning: false, automated: false };
@@ -414,6 +422,13 @@ function loadGame() {
     });
     
     renderStoryLogs();
+}
+
+function hardReset() {
+    if (confirm("Are you sure you want to completely wipe your save? This cannot be undone.")) {
+        localStorage.removeItem('abyssalSave');
+        location.reload();
+    }
 }
 
 function getNextMilestoneText(currentLevel) {
@@ -425,42 +440,43 @@ function getNextMilestoneText(currentLevel) {
     return `Next Boost: Lvl ${next} (Output x2)`;
 }
 
-// --- Core Update Loop ---
-
 function updateUI() {
-    document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
+    document.getElementById('heatDisplay').innerText = "Heat: " + formatNumber(Number(state.heat));
     
     let totalOPS = 0;
     
     Object.keys(entityConfig).forEach(key => {
         let upg = state.upgrades[key];
+        let conf = entityConfig[key];
         let bulkInfo = getBulkCostInfo(key);
         
-        document.getElementById('cost_' + key).innerText = bulkInfo.cost.toString();
+        document.getElementById('cost_' + key).innerText = formatNumber(Number(bulkInfo.cost));
         document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
         
         let currentPayout = calculatePayout(key);
-        document.getElementById('output_' + key).innerText = "Output: " + currentPayout.toString();
+        document.getElementById('output_' + key).innerText = "Output: " + formatNumber(Number(currentPayout));
         document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
-        // Calculate OPS for display (converts BigInt to standard Number approximation)
         let actualTimeSec = getActualTime(key) / 1000;
         let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
         document.getElementById('ops_' + key).innerText = formatNumber(itemOPS) + "/s";
         
         if (upg.automated) totalOPS += itemOPS;
         
-        // Hide purchased Managers
         let managerCard = document.getElementById('managerCard_' + key);
         if (upg.automated) {
             managerCard.style.display = 'none';
         } else {
-            document.getElementById('btn_manager_' + key).disabled = state.heat < entityConfig[key].managerCost;
+            managerCard.style.display = 'flex'; // Explicitly restores display after a prestige
+            let actualManagerCost = conf.managerCost;
+            if (state.unlockedSkills.includes("manager_discount")) actualManagerCost = actualManagerCost / 2n;
+            
+            document.getElementById('manCost_' + key).innerText = `Cost: ${formatNumber(Number(actualManagerCost))} Heat`;
+            document.getElementById('btn_manager_' + key).disabled = state.heat < actualManagerCost;
         }
 
-        // Handle Progress Bars
         let fill = document.getElementById('fill_' + key);
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
@@ -485,26 +501,25 @@ function updateUI() {
     
     document.getElementById('opsDisplay').innerText = "Overall Output: " + formatNumber(totalOPS) + "/s";
     
-    const PRESTIGE_THRESHOLD = 1000000n;
-    if (state.biomassMultiplier === 1n) {
-        let percent = Number((state.heat * 1000n) / PRESTIGE_THRESHOLD) / 10;
+    const currentThreshold = getPrestigeThreshold();
+    if (state.prestigeCount === 0n) {
+        let percent = Number((state.heat * 1000n) / currentThreshold) / 10;
         if (percent > 100) percent = 100;
         document.getElementById('thermoFill').style.width = percent + "%";
         document.getElementById('thermoText').innerText = percent.toFixed(1) + "% Banked Heat";
     } else {
-        let currentMPTier = state.totalHeatEarned / 2000000n;
-        let percent = Number((state.heat * 1000n) / 2000000n) / 10;
+        let percent = Number((state.heat * 1000n) / currentThreshold) / 10;
         if (percent > 100) percent = 100;
         document.getElementById('thermoFill').style.width = percent + "%";
         document.getElementById('thermoText').innerText = "Banked Heat: " + percent.toFixed(1) + "% of Next Tier";
     }
     
-    // Hide purchased Cash Upgrades
     cashUpgrades.forEach(u => {
         let card = document.getElementById('upgradeCard_' + u.id);
         if (state.purchasedUpgrades.includes(u.id)) {
             card.style.display = 'none';
         } else {
+            card.style.display = 'flex'; // Explicitly restores display after a prestige
             document.getElementById('btn_upg_' + u.id).disabled = state.heat < u.cost;
         }
     });
@@ -521,14 +536,15 @@ function updateUI() {
         surgeBtn.innerText = `Geothermal Surge (Ready)`;
     }
     
-    // Reveal prestige button based on current banked heat
-    if (state.heat >= 1000000n || state.biomassMultiplier > 1n) {
-        document.getElementById('prestigeBtn').classList.remove('hidden');
+    const prestigeBtn = document.getElementById('prestigeBtn');
+    if (state.heat >= currentThreshold) {
+        prestigeBtn.classList.remove('hidden');
+        prestigeBtn.innerText = `Collapse & Mutate (Requires ${formatNumber(Number(currentThreshold))} Heat)`;
     } else {
-        document.getElementById('prestigeBtn').classList.add('hidden');
+        prestigeBtn.classList.add('hidden');
     }
 
-    if (state.biomassMultiplier > 1n) {
+    if (state.prestigeCount > 0n) {
         document.getElementById('evolutionLocked').classList.add('hidden');
         document.getElementById('evolutionContent').classList.remove('hidden');
         document.getElementById('biomassDisplay').innerText = "Biomass Multiplier: x" + state.biomassMultiplier.toString();
@@ -548,7 +564,6 @@ function updateUI() {
     });
 }
 
-// Initialise the game
 initUI();
 loadGame();
 updateUI();
