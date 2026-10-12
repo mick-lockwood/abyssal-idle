@@ -305,8 +305,12 @@ function unlockSkill(skillId) {
 
 function prestige() {
     const prestigeThreshold = 1000000n; 
-    if (state.totalHeatEarned < prestigeThreshold) return;
+    
+    // Now requires banked heat rather than lifetime heat
+    if (state.heat < prestigeThreshold) return;
 
+    // We keep the actual reward math tied to totalHeatEarned so players 
+    // are still rewarded for their total progression speed over the run
     let newBiomass = state.totalHeatEarned / 500000n; 
     let newMutationPoints = 1n + (state.totalHeatEarned / 2000000n);
 
@@ -481,20 +485,18 @@ function updateUI() {
     
     document.getElementById('opsDisplay').innerText = "Overall Output: " + formatNumber(totalOPS) + "/s";
     
-    // Core Temperature Gauge Logic
     const PRESTIGE_THRESHOLD = 1000000n;
-    if (state.biomassMultiplier === 1n && state.totalHeatEarned < PRESTIGE_THRESHOLD) {
-        let percent = Number((state.totalHeatEarned * 1000n) / PRESTIGE_THRESHOLD) / 10;
+    if (state.biomassMultiplier === 1n) {
+        let percent = Number((state.heat * 1000n) / PRESTIGE_THRESHOLD) / 10;
         if (percent > 100) percent = 100;
         document.getElementById('thermoFill').style.width = percent + "%";
-        document.getElementById('thermoText').innerText = percent.toFixed(1) + "% to Collapse Unlock";
+        document.getElementById('thermoText').innerText = percent.toFixed(1) + "% Banked Heat";
     } else {
         let currentMPTier = state.totalHeatEarned / 2000000n;
-        let heatIntoCurrentTier = state.totalHeatEarned - (currentMPTier * 2000000n);
-        let percent = Number((heatIntoCurrentTier * 1000n) / 2000000n) / 10;
+        let percent = Number((state.heat * 1000n) / 2000000n) / 10;
         if (percent > 100) percent = 100;
         document.getElementById('thermoFill').style.width = percent + "%";
-        document.getElementById('thermoText').innerText = "Next Mutation Point: " + percent.toFixed(1) + "%";
+        document.getElementById('thermoText').innerText = "Banked Heat: " + percent.toFixed(1) + "% of Next Tier";
     }
     
     // Hide purchased Cash Upgrades
@@ -519,8 +521,11 @@ function updateUI() {
         surgeBtn.innerText = `Geothermal Surge (Ready)`;
     }
     
-    if (state.totalHeatEarned >= 1000000n || state.biomassMultiplier > 1n) {
+    // Reveal prestige button based on current banked heat
+    if (state.heat >= 1000000n || state.biomassMultiplier > 1n) {
         document.getElementById('prestigeBtn').classList.remove('hidden');
+    } else {
+        document.getElementById('prestigeBtn').classList.add('hidden');
     }
 
     if (state.biomassMultiplier > 1n) {
