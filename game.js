@@ -1,17 +1,33 @@
+// Master Configuration Arrays
+const entityConfig = {
+    bacteria:  { name: "Chemosynthetic Bacteria", baseCost: 10n, baseOutput: 1n, baseTime: 2000, managerCost: 1000n, managerName: "Bacterial Hive Mind" },
+    sponges:   { name: "Deep Sea Sponges", baseCost: 150n, baseOutput: 10n, baseTime: 4000, managerCost: 15000n, managerName: "Current Filterer" },
+    tubeWorms: { name: "Tube Worm Colony", baseCost: 1000n, baseOutput: 60n, baseTime: 6000, managerCost: 100000n, managerName: "Root Network" },
+    vent:      { name: "Thermal Vent", baseCost: 40000n, baseOutput: 540n, baseTime: 12000, managerCost: 1000000n, managerName: "Pressure Regulator" },
+    chimney:   { name: "Hydrothermal Chimney", baseCost: 500000n, baseOutput: 4000n, baseTime: 24000, managerCost: 10000000n, managerName: "Mineral Excavator" },
+    magma:     { name: "Magma Chamber", baseCost: 1500000n, baseOutput: 12000n, baseTime: 48000, managerCost: 50000000n, managerName: "Core Tapper" },
+    plume:     { name: "Mantle Plume", baseCost: 20000000n, baseOutput: 80000n, baseTime: 96000, managerCost: 500000000n, managerName: "Tectonic Injector" },
+    rift:      { name: "Abyssal Rift", baseCost: 300000000n, baseOutput: 1000000n, baseTime: 192000, managerCost: 10000000000n, managerName: "Planetary AI" }
+};
+
+const cashUpgrades = [
+    { id: "upg_bac", name: "Thermal Adaptation", desc: "Bacteria output x3", cost: 10000n, target: "bacteria", multiplier: 3n },
+    { id: "upg_spo", name: "Porous Structures", desc: "Sponges output x3", cost: 50000n, target: "sponges", multiplier: 3n },
+    { id: "upg_tub", name: "Deep Roots", desc: "Tube Worms output x3", cost: 500000n, target: "tubeWorms", multiplier: 3n },
+    { id: "upg_ven", name: "Reinforced Walls", desc: "Thermal Vent output x3", cost: 5000000n, target: "vent", multiplier: 3n },
+    { id: "upg_all1", name: "Geothermal Infusion", desc: "All outputs x2", cost: 25000000n, target: "all", multiplier: 2n }
+];
+
 let state = {
-    saveVersion: 2, 
+    saveVersion: 3, 
     heat: 0n,
     totalHeatEarned: 0n,
     biomassMultiplier: 1n,
     mutationPoints: 0n,
     unlockedSkills: [],
     storyIndex: 0,
-    upgrades: {
-        bacteria: { count: 1n, cost: 10n, baseOutput: 1n, baseTime: 2000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
-        tubeWorms: { count: 0n, cost: 1000n, baseOutput: 60n, baseTime: 6000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
-        vent: { count: 0n, cost: 40000n, baseOutput: 540n, baseTime: 20000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 100000n },
-        magma: { count: 0n, cost: 1500000n, baseOutput: 8000n, baseTime: 60000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
-    }
+    purchasedUpgrades: [],
+    upgrades: {}
 };
 
 let surgeActive = false;
@@ -31,7 +47,74 @@ const skillNodes = {
     "cheaper_bacteria": { cost: 3n, requires: [] }
 };
 
-// UI Control
+// --- Initialization & UI Building ---
+
+function initUI() {
+    const storeDiv = document.getElementById('businessStore');
+    const managerDiv = document.getElementById('managerStore');
+    const upgradeDiv = document.getElementById('upgradeStore');
+    
+    let storeHTML = "";
+    let managerHTML = "";
+    
+    Object.keys(entityConfig).forEach(key => {
+        let conf = entityConfig[key];
+        storeHTML += `
+            <div class="business-card">
+                <div class="business-header">
+                    <strong>${conf.name}</strong>
+                    <span id="${key}Count" class="level-badge">Lvl 0</span>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-bar" id="bar_${key}" onclick="triggerCycle('${key}', event)">
+                        <div class="progress-fill" id="fill_${key}"></div>
+                        <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                    </div>
+                    <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
+                        Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${conf.baseCost}</span>
+                    </button>
+                </div>
+                <div class="business-stats">
+                    <span id="output_${key}" class="output-text">Output: 0</span>
+                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
+                    <span id="milestone_${key}" class="milestone-text">Next Boost: Lvl 25</span>
+                </div>
+            </div>
+        `;
+        
+        managerHTML += `
+            <div class="manager-card" id="managerCard_${key}">
+                <div>
+                    <strong>${conf.managerName}</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Automates ${conf.name}.</span><br>
+                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${conf.managerCost} Heat</span>
+                </div>
+                <button id="btn_manager_${key}" class="manager-buy-btn" onclick="buyManager('${key}')">Hire</button>
+            </div>
+        `;
+    });
+    
+    let upgHTML = "";
+    cashUpgrades.forEach(u => {
+        upgHTML += `
+            <div class="upgrade-card" id="upgradeCard_${u.id}">
+                <div>
+                    <strong>${u.name}</strong><br>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">${u.desc}</span><br>
+                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${u.cost} Heat</span>
+                </div>
+                <button id="btn_upg_${u.id}" class="upgrade-buy-btn" onclick="buyCashUpgrade('${u.id}')">Research</button>
+            </div>
+        `;
+    });
+    
+    storeDiv.innerHTML = storeHTML;
+    managerDiv.innerHTML = managerHTML;
+    upgradeDiv.innerHTML = upgHTML;
+}
+
+// --- Interaction & Tabs ---
+
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -58,73 +141,6 @@ function activateSurge() {
     }
 }
 
-// Dynamic Math Models
-function getActualTime(key) {
-    let upg = state.upgrades[key];
-    let divs = 1;
-    if (upg.count >= 50n) divs *= 2;
-    if (upg.count >= 100n) divs *= 2;
-    if (upg.count >= 200n) divs *= 2;
-    return Math.max(50, Math.floor(upg.baseTime / divs));
-}
-
-function getMilestoneMultiplier(level) {
-    let mult = 1n;
-    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n];
-    thresholds.forEach(t => {
-        if (level >= t) mult *= 2n;
-    });
-    return mult;
-}
-
-function calculatePayout(key) {
-    let upg = state.upgrades[key];
-    if (upg.count === 0n) return 0n;
-
-    let multiplier = getMilestoneMultiplier(upg.count);
-    multiplier *= state.biomassMultiplier;
-    
-    // Logs Achievement System: +25% Output per unlocked log
-    let storyBonus = 100n + (BigInt(state.storyIndex) * 25n);
-    multiplier = (multiplier * storyBonus) / 100n;
-    
-    if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
-    if (surgeActive) multiplier *= 3n; 
-    
-    return upg.count * upg.baseOutput * multiplier;
-}
-
-function getBulkCostInfo(key) {
-    let upg = state.upgrades[key];
-    let tempCost = upg.cost;
-    let totalCost = 0n;
-    let itemsToBuy = 0n;
-    
-    let targetAmount = buyMode === '1' ? 1n : (buyMode === '10' ? 10n : 9999n); 
-
-    for(let i = 0n; i < targetAmount; i++) {
-        let actualCost = tempCost;
-        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
-            actualCost = (tempCost * 80n) / 100n;
-        }
-
-        if (buyMode === 'Max' && state.heat < (totalCost + actualCost)) break;
-
-        totalCost += actualCost;
-        itemsToBuy++;
-        tempCost = (tempCost * 115n) / 100n;
-    }
-    
-    if (itemsToBuy === 0n && buyMode === 'Max') {
-        let fallbackCost = tempCost;
-        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) fallbackCost = (tempCost * 80n) / 100n;
-        return { count: 0n, cost: fallbackCost };
-    }
-
-    return { count: itemsToBuy, cost: totalCost };
-}
-
-// Interaction
 function triggerCycle(key, event) {
     let upg = state.upgrades[key];
     if (upg.count > 0n && !upg.isRunning) {
@@ -144,6 +160,99 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
+// --- Math & Math Formatting ---
+
+function getActualTime(key) {
+    let upg = state.upgrades[key];
+    let conf = entityConfig[key];
+    let divs = 1;
+    if (upg.count >= 50n) divs *= 2;
+    if (upg.count >= 100n) divs *= 2;
+    if (upg.count >= 200n) divs *= 2;
+    return Math.max(50, Math.floor(conf.baseTime / divs));
+}
+
+function getMilestoneMultiplier(level) {
+    let mult = 1n;
+    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n, 400n, 500n];
+    thresholds.forEach(t => {
+        if (level >= t) mult *= 2n;
+    });
+    return mult;
+}
+
+function calculatePayout(key) {
+    let upg = state.upgrades[key];
+    let conf = entityConfig[key];
+    if (upg.count === 0n) return 0n;
+
+    let multiplier = getMilestoneMultiplier(upg.count);
+    multiplier *= state.biomassMultiplier;
+    
+    let storyBonus = 100n + (BigInt(state.storyIndex) * 25n);
+    multiplier = (multiplier * storyBonus) / 100n;
+    
+    cashUpgrades.forEach(u => {
+        if (state.purchasedUpgrades.includes(u.id)) {
+            if (u.target === key || u.target === "all") multiplier *= u.multiplier;
+        }
+    });
+    
+    if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
+    if (surgeActive) multiplier *= 3n; 
+    
+    return upg.count * conf.baseOutput * multiplier;
+}
+
+function formatNumber(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
+    return num.toFixed(1);
+}
+
+function getBulkCostInfo(key) {
+    let upg = state.upgrades[key];
+    let tempCost = upg.cost;
+    let totalCost = 0n;
+    let itemsToBuy = 0n;
+    
+    let targetAmount = 1n;
+    if (buyMode === '10') targetAmount = 10n;
+    else if (buyMode === 'Next') {
+        const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n, 400n, 500n];
+        let nextMilestone = thresholds.find(t => t > upg.count);
+        if (!nextMilestone) nextMilestone = upg.count + 100n;
+        targetAmount = nextMilestone - upg.count;
+    } else if (buyMode === 'Max') {
+        targetAmount = 9999n;
+    }
+
+    for(let i = 0n; i < targetAmount; i++) {
+        let actualCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) {
+            actualCost = (tempCost * 80n) / 100n;
+        }
+
+        if (buyMode === 'Max' && state.heat < (totalCost + actualCost)) break;
+
+        totalCost += actualCost;
+        itemsToBuy++;
+        tempCost = (tempCost * 115n) / 100n;
+    }
+    
+    if (itemsToBuy === 0n && (buyMode === 'Max' || buyMode === 'Next')) {
+        let fallbackCost = tempCost;
+        if (key === "bacteria" && state.unlockedSkills.includes("cheaper_bacteria")) fallbackCost = (tempCost * 80n) / 100n;
+        return { count: 0n, cost: fallbackCost };
+    }
+
+    return { count: itemsToBuy, cost: totalCost };
+}
+
+// --- Purchasing ---
+
 function buyUpgrade(key) {
     let bulkInfo = getBulkCostInfo(key);
     if (bulkInfo.count === 0n || state.heat < bulkInfo.cost) return;
@@ -160,13 +269,23 @@ function buyUpgrade(key) {
 
 function buyManager(key) {
     let upg = state.upgrades[key];
-    if (!upg.automated && state.heat >= upg.managerCost) {
-        state.heat -= upg.managerCost;
+    let conf = entityConfig[key];
+    if (!upg.automated && state.heat >= conf.managerCost) {
+        state.heat -= conf.managerCost;
         upg.automated = true;
         if (!upg.isRunning && upg.count > 0n) {
             upg.isRunning = true;
             upg.timeRemaining = getActualTime(key);
         }
+        updateUI();
+    }
+}
+
+function buyCashUpgrade(id) {
+    let upg = cashUpgrades.find(u => u.id === id);
+    if (upg && state.heat >= upg.cost && !state.purchasedUpgrades.includes(id)) {
+        state.heat -= upg.cost;
+        state.purchasedUpgrades.push(id);
         updateUI();
     }
 }
@@ -182,6 +301,8 @@ function unlockSkill(skillId) {
     }
 }
 
+// --- Systems ---
+
 function prestige() {
     const prestigeThreshold = 1000000n; 
     if (state.totalHeatEarned < prestigeThreshold) return;
@@ -190,20 +311,27 @@ function prestige() {
     let newMutationPoints = 1n + (state.totalHeatEarned / 2000000n);
 
     state = {
-        saveVersion: 2,
+        saveVersion: 3,
         heat: 0n,
         totalHeatEarned: 0n,
         biomassMultiplier: state.biomassMultiplier + newBiomass,
         mutationPoints: state.mutationPoints + newMutationPoints,
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
-        upgrades: {
-            bacteria: { count: 1n, cost: 10n, baseOutput: 1n, baseTime: 2000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 1000n },
-            tubeWorms: { count: 0n, cost: 1000n, baseOutput: 60n, baseTime: 6000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 15000n },
-            vent: { count: 0n, cost: 40000n, baseOutput: 540n, baseTime: 20000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 100000n },
-            magma: { count: 0n, cost: 1500000n, baseOutput: 8000n, baseTime: 60000, timeRemaining: 0, isRunning: false, automated: false, managerCost: 5000000n }
-        }
+        purchasedUpgrades: [],
+        upgrades: {}
     };
+    
+    Object.keys(entityConfig).forEach(key => {
+        state.upgrades[key] = {
+            count: key === 'bacteria' ? 1n : 0n,
+            cost: entityConfig[key].baseCost,
+            timeRemaining: 0,
+            isRunning: false,
+            automated: false
+        };
+    });
+    
     switchTab('tab_store');
     updateUI();
 }
@@ -223,22 +351,18 @@ function checkStory() {
     if (state.storyIndex >= storyMilestones.length) return;
     let nextMilestone = storyMilestones[state.storyIndex];
     if (state.totalHeatEarned >= nextMilestone.threshold) {
-        
         const container = document.getElementById('storyLogContainer');
         const newLog = document.createElement('div');
         newLog.className = 'story-entry';
         newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${nextMilestone.threshold} Heat Requirement</strong><br>${nextMilestone.text}`;
-        
-        // Push the new log to the top of the container
         container.prepend(newLog);
         
         state.storyIndex++;
-        updateUI(); // Pushes the new 25% output multiplier immediately
+        updateUI(); 
         checkStory(); 
     }
 }
 
-// System
 function saveGame() {
     const serialized = JSON.stringify(state, (key, value) => 
         typeof value === 'bigint' ? value.toString() + 'n' : value
@@ -256,15 +380,13 @@ function loadGame() {
                 return value;
             });
             
-            if (loadedState.saveVersion !== 2) throw new Error("Economy Rebalance: Forcing fresh save.");
-            
+            if (loadedState.saveVersion !== 3) throw new Error("Adding new AdCap entities. Forcing fresh save.");
             state = loadedState;
             
             const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
             const offlineMs = Date.now() - lastTime;
             
-            const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
-            keys.forEach(key => {
+            Object.keys(entityConfig).forEach(key => {
                 let upg = state.upgrades[key];
                 if (upg.automated && upg.count > 0n) {
                     let actualTimeMs = getActualTime(key);
@@ -280,53 +402,64 @@ function loadGame() {
         }
     }
     
-    // Force logs to generate when loading the game
+    // Inject defaults for any missing state variables after a wipe
+    Object.keys(entityConfig).forEach(key => {
+        if (!state.upgrades[key]) {
+            state.upgrades[key] = { count: key === 'bacteria' ? 1n : 0n, cost: entityConfig[key].baseCost, timeRemaining: 0, isRunning: false, automated: false };
+        }
+    });
+    
     renderStoryLogs();
 }
 
 function getNextMilestoneText(currentLevel) {
-    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n];
+    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n, 400n, 500n];
     let next = thresholds.find(m => m > currentLevel);
     
     if (!next) return "Max Boosts Reached";
-    if ([50n, 100n, 200n].includes(next)) {
-        return `Next Boost: Lvl ${next} (Speed x2 & Output x2)`;
-    }
+    if ([50n, 100n, 200n].includes(next)) return `Next Boost: Lvl ${next} (Speed x2 & Output x2)`;
     return `Next Boost: Lvl ${next} (Output x2)`;
 }
+
+// --- Core Update Loop ---
 
 function updateUI() {
     document.getElementById('heatDisplay').innerText = "Heat: " + state.heat.toString();
     
-    const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
-    keys.forEach(key => {
+    let totalOPS = 0;
+    
+    Object.keys(entityConfig).forEach(key => {
         let upg = state.upgrades[key];
         let bulkInfo = getBulkCostInfo(key);
         
         document.getElementById('cost_' + key).innerText = bulkInfo.cost.toString();
         document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
-        
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
-        document.getElementById('output_' + key).innerText = "Output: " + calculatePayout(key).toString();
-        document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
         
+        let currentPayout = calculatePayout(key);
+        document.getElementById('output_' + key).innerText = "Output: " + currentPayout.toString();
+        document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
-        let managerBtn = document.getElementById('manager_' + key);
+        // Calculate OPS for display (converts BigInt to standard Number approximation)
+        let actualTimeSec = getActualTime(key) / 1000;
+        let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
+        document.getElementById('ops_' + key).innerText = formatNumber(itemOPS) + "/s";
+        
+        if (upg.automated) totalOPS += itemOPS;
+        
+        // Hide purchased Managers
+        let managerCard = document.getElementById('managerCard_' + key);
         if (upg.automated) {
-            managerBtn.innerText = "Automated";
-            managerBtn.disabled = true;
-            managerBtn.style.color = "#22c55e";
-            managerBtn.style.borderColor = "#22c55e";
+            managerCard.style.display = 'none';
         } else {
-            managerBtn.innerText = "Automate (" + upg.managerCost.toString() + ")";
-            managerBtn.disabled = state.heat < upg.managerCost;
+            document.getElementById('btn_manager_' + key).disabled = state.heat < entityConfig[key].managerCost;
         }
 
+        // Handle Progress Bars
         let fill = document.getElementById('fill_' + key);
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
-        let actualTimeMs = getActualTime(key);
         
         if (upg.count === 0n) {
             bar.style.backgroundColor = "#0f172a";
@@ -334,15 +467,27 @@ function updateUI() {
             timeText.innerText = "Locked";
             bar.style.cursor = "not-allowed";
         } else if (upg.isRunning) {
-            let progressPercent = 100 - ((upg.timeRemaining / actualTimeMs) * 100);
+            let progressPercent = 100 - ((upg.timeRemaining / (actualTimeSec * 1000)) * 100);
             fill.style.width = progressPercent + "%";
             timeText.innerText = (upg.timeRemaining / 1000).toFixed(1) + "s";
             bar.style.cursor = upg.automated ? "default" : "not-allowed";
         } else {
             fill.style.width = "0%";
-            timeText.innerText = "Run (" + (actualTimeMs / 1000).toFixed(1) + "s)";
+            timeText.innerText = "Run (" + actualTimeSec.toFixed(1) + "s)";
             bar.style.cursor = "pointer";
             bar.style.backgroundColor = "#1e293b";
+        }
+    });
+    
+    document.getElementById('opsDisplay').innerText = "Overall Output: " + formatNumber(totalOPS) + "/s";
+    
+    // Hide purchased Cash Upgrades
+    cashUpgrades.forEach(u => {
+        let card = document.getElementById('upgradeCard_' + u.id);
+        if (state.purchasedUpgrades.includes(u.id)) {
+            card.style.display = 'none';
+        } else {
+            document.getElementById('btn_upg_' + u.id).disabled = state.heat < u.cost;
         }
     });
     
@@ -362,7 +507,6 @@ function updateUI() {
         document.getElementById('prestigeBtn').classList.remove('hidden');
     }
 
-    // Evolution UI Locking Logic
     if (state.biomassMultiplier > 1n) {
         document.getElementById('evolutionLocked').classList.add('hidden');
         document.getElementById('evolutionContent').classList.remove('hidden');
@@ -383,17 +527,17 @@ function updateUI() {
     });
 }
 
+// Initialise the game
+initUI();
 loadGame();
 updateUI();
 
-// 50ms Tick Loop
 setInterval(() => {
     let now = Date.now();
     let dt = now - lastTick;
     lastTick = now;
     
-    const keys = ['bacteria', 'tubeWorms', 'vent', 'magma'];
-    keys.forEach(key => {
+    Object.keys(entityConfig).forEach(key => {
         let upg = state.upgrades[key];
         
         if (upg.isRunning) {
@@ -419,7 +563,6 @@ setInterval(() => {
     updateUI();
 }, 50);
 
-// Cooldown & Story Loop
 setInterval(() => {
     if (surgeCooldown > 0) surgeCooldown--;
     checkStory();
