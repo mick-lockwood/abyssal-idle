@@ -25,7 +25,7 @@
                 <!-- Core Temperature Gauge -->
                 <div class="thermometer-container">
                     <div class="thermometer-fill" id="thermoFill"></div>
-                    <span class="thermometer-text" id="thermoText">0.0% to Collapse</span>
+                    <span class="thermometer-text" id="thermoText">0.0% Banked</span>
                 </div>
             </div>
             
@@ -41,11 +41,10 @@
                 <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">Max</button>
             </div>
 
-            <!-- JavaScript will dynamically build the business cards inside this container -->
             <div class="store" id="businessStore"></div>
 
             <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
-                Collapse & Mutate (Requires 1,000,000 Heat)
+                Collapse & Mutate
             </button>
         </div>
 
@@ -62,7 +61,7 @@
         <div id="tab_evolution" class="panel tab-content">
             <div id="evolutionLocked" class="locked-screen">
                 <h3>Evolution Locked</h3>
-                <p>You must reach 1,000,000 Heat to Collapse & Mutate before accessing the Skill Tree.</p>
+                <p>You must complete your first Collapse & Mutate before accessing the Skill Tree.</p>
             </div>
             
             <div id="evolutionContent" class="hidden">
@@ -79,7 +78,17 @@
                     <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
                         <strong>Symbiosis</strong><br>
                         Bacteria cost -20%<br>
-                        Cost: 3 MP
+                        Cost: 2 MP
+                    </button>
+                    <button id="skill_biomass_boost" class="skill-btn" onclick="unlockSkill('biomass_boost')">
+                        <strong>Genetic Density</strong><br>
+                        5x All Outputs<br>
+                        Cost: 5 MP
+                    </button>
+                    <button id="skill_manager_discount" class="skill-btn" onclick="unlockSkill('manager_discount')">
+                        <strong>Neural Links</strong><br>
+                        Managers cost -50%<br>
+                        Cost: 10 MP
                     </button>
                 </div>
             </div>
@@ -92,6 +101,9 @@
             </p>
             <div id="storyLogContainer"></div>
         </div>
+
+        <!-- Hard Reset Button -->
+        <button class="hard-reset-btn" onclick="hardReset()">Hard Reset Game</button>
 
     </div>
     <script src="game.js"></script>
