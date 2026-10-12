@@ -75,12 +75,12 @@ function initUI() {
                         <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
                     </div>
                     <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
-                        Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${conf.baseCost}</span>
+                        Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
                     </button>
                 </div>
                 <div class="business-stats">
                     <span id="output_${key}" class="output-text">Output: 0</span>
-                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
+                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0/s</span>
                     <span id="milestone_${key}" class="milestone-text">Next Boost: Lvl 25</span>
                 </div>
             </div>
@@ -91,7 +91,7 @@ function initUI() {
                 <div>
                     <strong>${conf.managerName}</strong><br>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">Automates ${conf.name}.</span><br>
-                    <span class="text-accent" id="manCost_${key}" style="font-size: 0.85rem;">Cost: ${conf.managerCost} Heat</span>
+                    <span class="text-accent" id="manCost_${key}" style="font-size: 0.85rem;">Cost: ${formatStatic(conf.managerCost)} Heat</span>
                 </div>
                 <button id="btn_manager_${key}" class="manager-buy-btn" onclick="buyManager('${key}')">Hire</button>
             </div>
@@ -105,7 +105,7 @@ function initUI() {
                 <div>
                     <strong>${u.name}</strong><br>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">${u.desc}</span><br>
-                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${formatNumber(Number(u.cost))} Heat</span>
+                    <span class="text-accent" style="font-size: 0.85rem;">Cost: ${formatStatic(u.cost)} Heat</span>
                 </div>
                 <button id="btn_upg_${u.id}" class="upgrade-buy-btn" onclick="buyCashUpgrade('${u.id}')">Research</button>
             </div>
@@ -205,12 +205,17 @@ function calculatePayout(key) {
     return upg.count * conf.baseOutput * multiplier;
 }
 
-function formatNumber(num) {
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + "K";
-    return typeof num === 'number' ? num.toFixed(1) : num.toString();
+function formatDynamic(num) {
+    let n = typeof num === 'bigint' ? Number(num) : num;
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
+    return Math.floor(n).toLocaleString('en-AU');
+}
+
+function formatStatic(num) {
+    let n = typeof num === 'bigint' ? num : BigInt(Math.floor(Number(num)));
+    return n.toLocaleString('en-AU');
 }
 
 function getBulkCostInfo(key) {
@@ -355,7 +360,7 @@ function renderStoryLogs() {
     for(let i = 0; i < state.storyIndex; i++) {
         const newLog = document.createElement('div');
         newLog.className = 'story-entry';
-        newLog.innerHTML = `<strong>Log ${i + 1} - ${formatNumber(Number(storyMilestones[i].threshold))} Heat Req.</strong><br>${storyMilestones[i].text}`;
+        newLog.innerHTML = `<strong>Log ${i + 1} - ${formatStatic(storyMilestones[i].threshold)} Heat Req.</strong><br>${storyMilestones[i].text}`;
         container.appendChild(newLog);
     }
 }
@@ -367,7 +372,7 @@ function checkStory() {
         const container = document.getElementById('storyLogContainer');
         const newLog = document.createElement('div');
         newLog.className = 'story-entry';
-        newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${formatNumber(Number(nextMilestone.threshold))} Heat Req.</strong><br>${nextMilestone.text}`;
+        newLog.innerHTML = `<strong>Log ${state.storyIndex + 1} - ${formatStatic(nextMilestone.threshold)} Heat Req.</strong><br>${nextMilestone.text}`;
         container.prepend(newLog);
         
         state.storyIndex++;
@@ -441,7 +446,7 @@ function getNextMilestoneText(currentLevel) {
 }
 
 function updateUI() {
-    document.getElementById('heatDisplay').innerText = "Heat: " + formatNumber(Number(state.heat));
+    document.getElementById('heatDisplay').innerText = "Heat: " + formatDynamic(state.heat);
     
     let totalOPS = 0;
     
@@ -450,18 +455,18 @@ function updateUI() {
         let conf = entityConfig[key];
         let bulkInfo = getBulkCostInfo(key);
         
-        document.getElementById('cost_' + key).innerText = formatNumber(Number(bulkInfo.cost));
+        document.getElementById('cost_' + key).innerText = formatStatic(bulkInfo.cost);
         document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
         
         let currentPayout = calculatePayout(key);
-        document.getElementById('output_' + key).innerText = "Output: " + formatNumber(Number(currentPayout));
+        document.getElementById('output_' + key).innerText = "Output: " + formatDynamic(currentPayout);
         document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
         let actualTimeSec = getActualTime(key) / 1000;
         let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
-        document.getElementById('ops_' + key).innerText = formatNumber(itemOPS) + "/s";
+        document.getElementById('ops_' + key).innerText = formatDynamic(itemOPS) + "/s";
         
         if (upg.automated) totalOPS += itemOPS;
         
@@ -469,11 +474,11 @@ function updateUI() {
         if (upg.automated) {
             managerCard.style.display = 'none';
         } else {
-            managerCard.style.display = 'flex'; // Explicitly restores display after a prestige
+            managerCard.style.display = 'flex';
             let actualManagerCost = conf.managerCost;
             if (state.unlockedSkills.includes("manager_discount")) actualManagerCost = actualManagerCost / 2n;
             
-            document.getElementById('manCost_' + key).innerText = `Cost: ${formatNumber(Number(actualManagerCost))} Heat`;
+            document.getElementById('manCost_' + key).innerText = `Cost: ${formatStatic(actualManagerCost)} Heat`;
             document.getElementById('btn_manager_' + key).disabled = state.heat < actualManagerCost;
         }
 
@@ -499,7 +504,7 @@ function updateUI() {
         }
     });
     
-    document.getElementById('opsDisplay').innerText = "Overall Output: " + formatNumber(totalOPS) + "/s";
+    document.getElementById('opsDisplay').innerText = "Overall Output: " + formatDynamic(totalOPS) + "/s";
     
     const currentThreshold = getPrestigeThreshold();
     if (state.prestigeCount === 0n) {
@@ -519,7 +524,7 @@ function updateUI() {
         if (state.purchasedUpgrades.includes(u.id)) {
             card.style.display = 'none';
         } else {
-            card.style.display = 'flex'; // Explicitly restores display after a prestige
+            card.style.display = 'flex';
             document.getElementById('btn_upg_' + u.id).disabled = state.heat < u.cost;
         }
     });
@@ -539,7 +544,7 @@ function updateUI() {
     const prestigeBtn = document.getElementById('prestigeBtn');
     if (state.heat >= currentThreshold) {
         prestigeBtn.classList.remove('hidden');
-        prestigeBtn.innerText = `Collapse & Mutate (Requires ${formatNumber(Number(currentThreshold))} Heat)`;
+        prestigeBtn.innerText = `Collapse & Mutate (Requires ${formatStatic(currentThreshold)} Heat)`;
     } else {
         prestigeBtn.classList.add('hidden');
     }
