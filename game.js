@@ -481,6 +481,22 @@ function updateUI() {
     
     document.getElementById('opsDisplay').innerText = "Overall Output: " + formatNumber(totalOPS) + "/s";
     
+    // Core Temperature Gauge Logic
+    const PRESTIGE_THRESHOLD = 1000000n;
+    if (state.biomassMultiplier === 1n && state.totalHeatEarned < PRESTIGE_THRESHOLD) {
+        let percent = Number((state.totalHeatEarned * 1000n) / PRESTIGE_THRESHOLD) / 10;
+        if (percent > 100) percent = 100;
+        document.getElementById('thermoFill').style.width = percent + "%";
+        document.getElementById('thermoText').innerText = percent.toFixed(1) + "% to Collapse Unlock";
+    } else {
+        let currentMPTier = state.totalHeatEarned / 2000000n;
+        let heatIntoCurrentTier = state.totalHeatEarned - (currentMPTier * 2000000n);
+        let percent = Number((heatIntoCurrentTier * 1000n) / 2000000n) / 10;
+        if (percent > 100) percent = 100;
+        document.getElementById('thermoFill').style.width = percent + "%";
+        document.getElementById('thermoText').innerText = "Next Mutation Point: " + percent.toFixed(1) + "%";
+    }
+    
     // Hide purchased Cash Upgrades
     cashUpgrades.forEach(u => {
         let card = document.getElementById('upgradeCard_' + u.id);
