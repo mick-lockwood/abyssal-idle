@@ -9,143 +9,56 @@
 <body>
     <div class="container">
         
-        <!-- Navigation Tabs -->
         <div class="nav-tabs">
             <button id="btn_tab_store" class="tab-btn active" onclick="switchTab('tab_store')">Oasis</button>
+            <button id="btn_tab_upgrades" class="tab-btn" onclick="switchTab('tab_upgrades')">Upgrades</button>
+            <button id="btn_tab_managers" class="tab-btn" onclick="switchTab('tab_managers')">Managers</button>
             <button id="btn_tab_evolution" class="tab-btn" onclick="switchTab('tab_evolution')">Mutations</button>
             <button id="btn_tab_story" class="tab-btn" onclick="switchTab('tab_story')">Logs</button>
         </div>
 
-        <!-- Oasis Tab (Main Game) -->
         <div id="tab_store" class="panel tab-content active-tab">
             <div class="currencies">
                 <h1 id="heatDisplay">Heat: 0</h1>
+                <h3 id="opsDisplay" style="color: var(--success); margin-top: 5px;">Overall Output: 0.0/s</h3>
             </div>
             
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
                 Geothermal Surge (Ready)
             </button>
 
-            <!-- Bulk Buy Controls -->
             <div class="buy-controls">
                 <span>Buy Multiplier:</span>
                 <button id="buy_1" class="toggle-btn active-toggle" onclick="setBuyMode('1')">x1</button>
                 <button id="buy_10" class="toggle-btn" onclick="setBuyMode('10')">x10</button>
-                <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">xMax</button>
+                <button id="buy_Next" class="toggle-btn" onclick="setBuyMode('Next')">Next</button>
+                <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">Max</button>
             </div>
 
-            <div class="store" id="businessStore">
-                <!-- Bacteria -->
-                <div class="business-card">
-                    <div class="business-header">
-                        <strong>Chemosynthetic Bacteria</strong>
-                        <span id="bacteriaCount" class="level-badge">Lvl 1</span>
-                    </div>
-                    <div class="progress-row">
-                        <div class="progress-bar" id="bar_bacteria" onclick="triggerCycle('bacteria', event)">
-                            <div class="progress-fill" id="fill_bacteria"></div>
-                            <span class="progress-text" id="time_bacteria">1.0s</span>
-                        </div>
-                        <button id="btn_bacteria" class="buy-btn" onclick="buyUpgrade('bacteria')">
-                            Buy <span id="qty_bacteria">x1</span><br><span id="cost_bacteria">50</span>
-                        </button>
-                    </div>
-                    <div class="business-stats">
-                        <span id="output_bacteria" class="output-text">Output: 2</span>
-                        <span id="milestone_bacteria" class="milestone-text">Next Boost: Lvl 10</span>
-                        <button id="manager_bacteria" class="manager-btn" onclick="buyManager('bacteria')">
-                            Automate (1,000 Heat)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tube Worms -->
-                <div class="business-card">
-                    <div class="business-header">
-                        <strong>Tube Worm Colony</strong>
-                        <span id="tubeWormsCount" class="level-badge">Lvl 0</span>
-                    </div>
-                    <div class="progress-row">
-                        <div class="progress-bar" id="bar_tubeWorms" onclick="triggerCycle('tubeWorms', event)">
-                            <div class="progress-fill" id="fill_tubeWorms"></div>
-                            <span class="progress-text" id="time_tubeWorms">3.0s</span>
-                        </div>
-                        <button id="btn_tubeWorms" class="buy-btn" onclick="buyUpgrade('tubeWorms')">
-                            Buy <span id="qty_tubeWorms">x1</span><br><span id="cost_tubeWorms">500</span>
-                        </button>
-                    </div>
-                    <div class="business-stats">
-                        <span id="output_tubeWorms" class="output-text">Output: 0</span>
-                        <span id="milestone_tubeWorms" class="milestone-text">Next Boost: Lvl 10</span>
-                        <button id="manager_tubeWorms" class="manager-btn" onclick="buyManager('tubeWorms')">
-                            Automate (15,000 Heat)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Thermal Vent -->
-                <div class="business-card">
-                    <div class="business-header">
-                        <strong>Thermal Vent</strong>
-                        <span id="ventCount" class="level-badge">Lvl 0</span>
-                    </div>
-                    <div class="progress-row">
-                        <div class="progress-bar" id="bar_vent" onclick="triggerCycle('vent', event)">
-                            <div class="progress-fill" id="fill_vent"></div>
-                            <span class="progress-text" id="time_vent">10.0s</span>
-                        </div>
-                        <button id="btn_vent" class="buy-btn" onclick="buyUpgrade('vent')">
-                            Buy <span id="qty_vent">x1</span><br><span id="cost_vent">5000</span>
-                        </button>
-                    </div>
-                    <div class="business-stats">
-                        <span id="output_vent" class="output-text">Output: 0</span>
-                        <span id="milestone_vent" class="milestone-text">Next Boost: Lvl 10</span>
-                        <button id="manager_vent" class="manager-btn" onclick="buyManager('vent')">
-                            Automate (250,000 Heat)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Magma Chamber -->
-                <div class="business-card">
-                    <div class="business-header">
-                        <strong>Magma Chamber</strong>
-                        <span id="magmaCount" class="level-badge">Lvl 0</span>
-                    </div>
-                    <div class="progress-row">
-                        <div class="progress-bar" id="bar_magma" onclick="triggerCycle('magma', event)">
-                            <div class="progress-fill" id="fill_magma"></div>
-                            <span class="progress-text" id="time_magma">30.0s</span>
-                        </div>
-                        <button id="btn_magma" class="buy-btn" onclick="buyUpgrade('magma')">
-                            Buy <span id="qty_magma">x1</span><br><span id="cost_magma">50000</span>
-                        </button>
-                    </div>
-                    <div class="business-stats">
-                        <span id="output_magma" class="output-text">Output: 0</span>
-                        <span id="milestone_magma" class="milestone-text">Next Boost: Lvl 10</span>
-                        <button id="manager_magma" class="manager-btn" onclick="buyManager('magma')">
-                            Automate (5,000,000 Heat)
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- JavaScript will dynamically build the business cards inside this container -->
+            <div class="store" id="businessStore"></div>
 
             <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
-                Collapse & Mutate (Requires 100,000 Heat)
+                Collapse & Mutate (Requires 1,000,000 Heat)
             </button>
         </div>
 
-        <!-- Evolution Tab (Skill Tree) -->
+        <div id="tab_upgrades" class="panel tab-content">
+            <h2>Oasis Upgrades</h2>
+            <div id="upgradeStore"></div>
+        </div>
+
+        <div id="tab_managers" class="panel tab-content">
+            <h2>Management Entities</h2>
+            <div id="managerStore"></div>
+        </div>
+
         <div id="tab_evolution" class="panel tab-content">
-            <!-- Locked Screen -->
             <div id="evolutionLocked" class="locked-screen">
                 <h3>Evolution Locked</h3>
                 <p>You must reach 1,000,000 Heat to Collapse & Mutate before accessing the Skill Tree.</p>
             </div>
             
-            <!-- Content (Hidden until Prestiging) -->
             <div id="evolutionContent" class="hidden">
                 <h3 id="biomassDisplay">Biomass Multiplier: x1</h3>
                 <h3 id="mutationDisplay">Mutation Points: 0</h3>
@@ -166,8 +79,6 @@
             </div>
         </div>
 
-        <!-- Logs Tab (Story) -->
-        <!-- REMOVED 'hidden' from the class list below -->
         <div id="tab_story" class="panel tab-content">
             <h2>Abyssal Logs</h2>
             <p style="color: #22c55e; font-size: 0.85rem; margin-bottom: 20px;">
