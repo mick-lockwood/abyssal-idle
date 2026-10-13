@@ -264,6 +264,15 @@ button:disabled {
     100% { box-shadow: 0 0 10px rgba(244, 63, 94, 0.2); }
 }
 
+.prestige-btn:disabled {
+    background-color: transparent !important;
+    border-color: #475569 !important;
+    color: #475569 !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+    animation: none !important;
+}
+
 .skill-grid { display: flex; flex-direction: column; gap: 12px; }
 .skill-btn {
     text-align: left;
