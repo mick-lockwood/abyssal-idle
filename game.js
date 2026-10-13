@@ -182,10 +182,13 @@ function bigIntSqRt(n) {
 }
 
 function calculatePendingBiomass() {
-    let baseDivisor = 1000000000000n; // 1 Trillion Heat divisor curve
-    if (state.totalHeatEarned < baseDivisor) return 0n;
+    let baseDivisor = 1000000000000n; 
     
-    let calculatedTotal = 150n * bigIntSqRt(state.totalHeatEarned / baseDivisor);
+    // By re-arranging the formula, we prevent BigInt from truncating to zero too early.
+    // Formula: Biomass = sqrt( (LifetimeHeat * 22500) / 1 Trillion )
+    let innerMath = (state.totalHeatEarned * 22500n) / baseDivisor;
+    
+    let calculatedTotal = bigIntSqRt(innerMath);
     let pending = calculatedTotal - (state.totalBiomassClaimed || 0n);
     
     return pending > 0n ? pending : 0n;
