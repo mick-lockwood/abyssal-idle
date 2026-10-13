@@ -28,9 +28,10 @@ const skillNodes = {
 };
 
 let state = {
-    saveVersion: 4, 
+    saveVersion: 5, 
     heat: 0n,
     totalHeatEarned: 0n,
+    totalBiomassClaimed: 0n,
     biomassMultiplier: 1n,
     mutationPoints: 0n,
     unlockedSkills: [],
@@ -80,7 +81,7 @@ function initUI() {
                 </div>
                 <div class="business-stats">
                     <span id="output_${key}" class="output-text">Output: 0</span>
-                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0/s</span>
+                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
                     <span id="milestone_${key}" class="milestone-text">Next Boost: Lvl 25</span>
                 </div>
             </div>
@@ -162,6 +163,34 @@ function spawnFloatingText(event, text) {
     setTimeout(() => { element.remove(); }, 800);
 }
 
+// --- Math Functions ---
+
+// Newton's method for BigInt square root
+function bigIntSqRt(n) {
+    if (n < 0n) return -1n;
+    if (n === 0n) return 0n;
+    let x0 = n / 2n;
+    if (x0 !== 0n) {
+        let x1 = (x0 + n / x0) / 2n;
+        while (x1 < x0) {
+            x0 = x1;
+            x1 = (x0 + n / x0) / 2n;
+        }
+        return x0;
+    }
+    return 1n;
+}
+
+function calculatePendingBiomass() {
+    let baseDivisor = 1000000000000n; // 1 Trillion Heat divisor curve
+    if (state.totalHeatEarned < baseDivisor) return 0n;
+    
+    let calculatedTotal = 150n * bigIntSqRt(state.totalHeatEarned / baseDivisor);
+    let pending = calculatedTotal - (state.totalBiomassClaimed || 0n);
+    
+    return pending > 0n ? pending : 0n;
+}
+
 function getActualTime(key) {
     let upg = state.upgrades[key];
     let conf = entityConfig[key];
@@ -207,7 +236,7 @@ function calculatePayout(key) {
 
 function formatDynamic(num) {
     let n = typeof num === 'bigint' ? Number(num) : num;
-    if (n >= 1e15) return (n / 1e15).toExponential(2); // Starts showing as 1.50e+15
+    if (n >= 1e15) return (n / 1e15).toExponential(2);
     if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
     if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
     if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
@@ -257,6 +286,8 @@ function getBulkCostInfo(key) {
 
     return { count: itemsToBuy, cost: totalCost };
 }
+
+// --- Purchasing Actions ---
 
 function buyUpgrade(key) {
     let bulkInfo = getBulkCostInfo(key);
@@ -314,47 +345,23 @@ function unlockSkill(skillId) {
     }
 }
 
-function getPrestigeThreshold() {
-    let base = 1000000n;
-    let multiplier = 10n ** BigInt(state.prestigeCount || 0n);
-    return base * multiplier;
-}
-
-function calculatePendingBiomass() {
-    // The divisor sets the pacing. A 1 Trillion divisor means you need 
-    // a lot of heat to see massive Biomass returns.
-    let baseDivisor = 1000000000000n; 
-    
-    if (state.totalHeatEarned < baseDivisor) return 0n;
-    
-    // Square root curve for diminishing returns
-    let calculatedTotal = 150n * bigIntSqRt(state.totalHeatEarned / baseDivisor);
-    
-    // Subtract what they have already claimed across all previous runs
-    // Note: You will need to add state.totalBiomassClaimed = 0n to your state object
-    let pending = calculatedTotal - (state.totalBiomassClaimed || 0n);
-    
-    return pending > 0n ? pending : 0n;
-}
-
 function prestige() {
     let pendingBiomass = calculatePendingBiomass();
-    
-    if (pendingBiomass <= 0n) return; // Cannot prestige if no reward is pending
+    if (pendingBiomass <= 0n) return;
 
-    // Grant 1 MP for every 100 Biomass earned in this run
     let newMutationPoints = pendingBiomass / 100n;
 
     state = {
         saveVersion: 5,
         heat: 0n,
-        totalHeatEarned: state.totalHeatEarned, // Keep lifetime heat
+        totalHeatEarned: state.totalHeatEarned, 
         totalBiomassClaimed: (state.totalBiomassClaimed || 0n) + pendingBiomass,
         biomassMultiplier: state.biomassMultiplier + pendingBiomass,
         mutationPoints: state.mutationPoints + newMutationPoints,
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
         purchasedUpgrades: [],
+        prestigeCount: (state.prestigeCount || 0n) + 1n,
         upgrades: {}
     };
     
@@ -371,6 +378,8 @@ function prestige() {
     switchTab('tab_store');
     updateUI();
 }
+
+// --- Systems & Formatting ---
 
 function renderStoryLogs() {
     const container = document.getElementById('storyLogContainer');
@@ -399,22 +408,6 @@ function checkStory() {
     }
 }
 
-// Calculates the square root of a BigInt for diminishing returns
-function bigIntSqRt(n) {
-    if (n < 0n) return -1n;
-    if (n === 0n) return 0n;
-    let x0 = n / 2n;
-    if (x0 !== 0n) {
-        let x1 = (x0 + n / x0) / 2n;
-        while (x1 < x0) {
-            x0 = x1;
-            x1 = (x0 + n / x0) / 2n;
-        }
-        return x0;
-    }
-    return 1n;
-}
-
 function saveGame() {
     const serialized = JSON.stringify(state, (key, value) => 
         typeof value === 'bigint' ? value.toString() + 'n' : value
@@ -432,8 +425,10 @@ function loadGame() {
                 return value;
             });
             
-            if (loadedState.saveVersion !== 4) throw new Error("Hard Reset: Version mismatch.");
+            if (loadedState.saveVersion !== 5) throw new Error("Hard Reset: Version mismatch.");
             state = loadedState;
+            
+            if (typeof state.totalBiomassClaimed === 'undefined') state.totalBiomassClaimed = 0n;
             
             const lastTime = parseInt(localStorage.getItem('lastSaveTime') || Date.now());
             const offlineMs = Date.now() - lastTime;
@@ -479,6 +474,8 @@ function getNextMilestoneText(currentLevel) {
     return `Next Boost: Lvl ${next} (Output x2)`;
 }
 
+// --- Dynamic Core UI Loop ---
+
 function updateUI() {
     document.getElementById('heatDisplay').innerText = "Heat: " + formatDynamic(state.heat);
     
@@ -508,7 +505,7 @@ function updateUI() {
         if (upg.automated) {
             managerCard.style.display = 'none';
         } else {
-            managerCard.style.display = 'flex';
+            managerCard.style.display = 'flex'; 
             let actualManagerCost = conf.managerCost;
             if (state.unlockedSkills.includes("manager_discount")) actualManagerCost = actualManagerCost / 2n;
             
@@ -540,25 +537,30 @@ function updateUI() {
     
     document.getElementById('opsDisplay').innerText = "Overall Output: " + formatDynamic(totalOPS) + "/s";
     
-    const currentThreshold = getPrestigeThreshold();
-    if (state.prestigeCount === 0n) {
-        let percent = Number((state.heat * 1000n) / currentThreshold) / 10;
-        if (percent > 100) percent = 100;
-        document.getElementById('thermoFill').style.width = percent + "%";
-        document.getElementById('thermoText').innerText = percent.toFixed(1) + "% Banked Heat";
-    } else {
-        let percent = Number((state.heat * 1000n) / currentThreshold) / 10;
-        if (percent > 100) percent = 100;
-        document.getElementById('thermoFill').style.width = percent + "%";
-        document.getElementById('thermoText').innerText = "Banked Heat: " + percent.toFixed(1) + "% of Next Tier";
-    }
+    // Exact Thermometer Calculation for Next Biomass Point
+    let baseDivisor = 1000000000000n;
+    let currentBiomassTarget = (state.totalBiomassClaimed || 0n) + calculatePendingBiomass() + 1n;
+    
+    let targetHeat = (currentBiomassTarget * currentBiomassTarget * baseDivisor) / 22500n;
+    let previousTargetHeat = ((currentBiomassTarget - 1n) * (currentBiomassTarget - 1n) * baseDivisor) / 22500n;
+    
+    let heatProgress = state.totalHeatEarned - previousTargetHeat;
+    let heatRequired = targetHeat - previousTargetHeat;
+    
+    let percent = 0;
+    if (heatRequired > 0n) percent = Number((heatProgress * 1000n) / heatRequired) / 10;
+    if (percent > 100) percent = 100;
+    if (percent < 0) percent = 0;
+    
+    document.getElementById('thermoFill').style.width = percent + "%";
+    document.getElementById('thermoText').innerText = percent.toFixed(1) + "% to Next Biomass";
     
     cashUpgrades.forEach(u => {
         let card = document.getElementById('upgradeCard_' + u.id);
         if (state.purchasedUpgrades.includes(u.id)) {
             card.style.display = 'none';
         } else {
-            card.style.display = 'flex';
+            card.style.display = 'flex'; 
             document.getElementById('btn_upg_' + u.id).disabled = state.heat < u.cost;
         }
     });
@@ -583,7 +585,6 @@ function updateUI() {
         prestigeBtn.innerText = `Collapse & Mutate (Claim +${formatStatic(pendingBiomass)} Biomass)`;
         prestigeBtn.disabled = false;
     } else if (state.totalHeatEarned > 100000n) {
-        // Show the button early but disable it, so they know what they are grinding toward
         prestigeBtn.classList.remove('hidden');
         prestigeBtn.innerText = `Collapse & Mutate (Need more Heat for +1 Biomass)`;
         prestigeBtn.disabled = true;
