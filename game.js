@@ -352,7 +352,8 @@ function prestige() {
     let pendingBiomass = calculatePendingBiomass();
     if (pendingBiomass <= 0n) return;
 
-    let newMutationPoints = pendingBiomass / 100n;
+    // Guaranteed 1 MP per prestige, plus 1 extra for every 10 Biomass claimed
+    let newMutationPoints = 1n + (pendingBiomass / 10n);
 
     state = {
         saveVersion: 5,
@@ -584,8 +585,9 @@ function updateUI() {
     let pendingBiomass = calculatePendingBiomass();
     
     if (pendingBiomass > 0n) {
+        let pendingMP = 1n + (pendingBiomass / 10n);
         prestigeBtn.classList.remove('hidden');
-        prestigeBtn.innerText = `Collapse & Mutate (Claim +${formatStatic(pendingBiomass)} Biomass)`;
+        prestigeBtn.innerText = `Collapse & Mutate (+${formatStatic(pendingBiomass)} Biomass, +${formatStatic(pendingMP)} MP)`;
         prestigeBtn.disabled = false;
     } else if (state.totalHeatEarned > 100000n) {
         prestigeBtn.classList.remove('hidden');
