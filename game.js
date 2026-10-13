@@ -207,6 +207,7 @@ function calculatePayout(key) {
 
 function formatDynamic(num) {
     let n = typeof num === 'bigint' ? Number(num) : num;
+    if (n >= 1e15) return (n / 1e15).toExponential(2); // Starts showing as 1.50e+15
     if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
     if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
     if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
@@ -319,23 +320,40 @@ function getPrestigeThreshold() {
     return base * multiplier;
 }
 
-function prestige() {
-    const currentThreshold = getPrestigeThreshold();
-    if (state.heat < currentThreshold) return;
+function calculatePendingBiomass() {
+    // The divisor sets the pacing. A 1 Trillion divisor means you need 
+    // a lot of heat to see massive Biomass returns.
+    let baseDivisor = 1000000000000n; 
+    
+    if (state.totalHeatEarned < baseDivisor) return 0n;
+    
+    // Square root curve for diminishing returns
+    let calculatedTotal = 150n * bigIntSqRt(state.totalHeatEarned / baseDivisor);
+    
+    // Subtract what they have already claimed across all previous runs
+    // Note: You will need to add state.totalBiomassClaimed = 0n to your state object
+    let pending = calculatedTotal - (state.totalBiomassClaimed || 0n);
+    
+    return pending > 0n ? pending : 0n;
+}
 
-    // Biomass is a direct multiplier to output, MP is used for tree unlocks
-    let newBiomass = state.totalHeatEarned / 5000000n; 
-    let newMutationPoints = 1n + (state.totalHeatEarned / 10000000n);
+function prestige() {
+    let pendingBiomass = calculatePendingBiomass();
+    
+    if (pendingBiomass <= 0n) return; // Cannot prestige if no reward is pending
+
+    // Grant 1 MP for every 100 Biomass earned in this run
+    let newMutationPoints = pendingBiomass / 100n;
 
     state = {
-        saveVersion: 4,
+        saveVersion: 5,
         heat: 0n,
-        totalHeatEarned: 0n,
-        biomassMultiplier: state.biomassMultiplier + newBiomass,
+        totalHeatEarned: state.totalHeatEarned, // Keep lifetime heat
+        totalBiomassClaimed: (state.totalBiomassClaimed || 0n) + pendingBiomass,
+        biomassMultiplier: state.biomassMultiplier + pendingBiomass,
         mutationPoints: state.mutationPoints + newMutationPoints,
         unlockedSkills: state.unlockedSkills,
         storyIndex: state.storyIndex,
-        prestigeCount: (state.prestigeCount || 0n) + 1n,
         purchasedUpgrades: [],
         upgrades: {}
     };
@@ -379,6 +397,22 @@ function checkStory() {
         updateUI(); 
         checkStory(); 
     }
+}
+
+// Calculates the square root of a BigInt for diminishing returns
+function bigIntSqRt(n) {
+    if (n < 0n) return -1n;
+    if (n === 0n) return 0n;
+    let x0 = n / 2n;
+    if (x0 !== 0n) {
+        let x1 = (x0 + n / x0) / 2n;
+        while (x1 < x0) {
+            x0 = x1;
+            x1 = (x0 + n / x0) / 2n;
+        }
+        return x0;
+    }
+    return 1n;
 }
 
 function saveGame() {
@@ -542,9 +576,17 @@ function updateUI() {
     }
     
     const prestigeBtn = document.getElementById('prestigeBtn');
-    if (state.heat >= currentThreshold) {
+    let pendingBiomass = calculatePendingBiomass();
+    
+    if (pendingBiomass > 0n) {
         prestigeBtn.classList.remove('hidden');
-        prestigeBtn.innerText = `Collapse & Mutate (Requires ${formatStatic(currentThreshold)} Heat)`;
+        prestigeBtn.innerText = `Collapse & Mutate (Claim +${formatStatic(pendingBiomass)} Biomass)`;
+        prestigeBtn.disabled = false;
+    } else if (state.totalHeatEarned > 100000n) {
+        // Show the button early but disable it, so they know what they are grinding toward
+        prestigeBtn.classList.remove('hidden');
+        prestigeBtn.innerText = `Collapse & Mutate (Need more Heat for +1 Biomass)`;
+        prestigeBtn.disabled = true;
     } else {
         prestigeBtn.classList.add('hidden');
     }
