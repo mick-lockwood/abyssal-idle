@@ -234,6 +234,11 @@ body {
     margin-bottom: 15px;
 }
 
+.business-header strong {
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+}
+
 .title-row {
     display: flex;
     justify-content: space-between;
@@ -252,11 +257,6 @@ body {
 
 .output-text { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
 .milestone-text { color: #f59e0b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
-
-.business-header strong {
-    font-size: 1.15rem;
-    letter-spacing: 0.5px;
-}
 
 .level-badge {
     background: rgba(0, 240, 255, 0.1);
