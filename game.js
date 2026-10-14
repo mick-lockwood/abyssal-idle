@@ -538,13 +538,13 @@ function updateUI() {
         document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
         
         let currentPayout = calculatePayout(key);
-        document.getElementById('output_' + key).innerText = "Output: " + formatDynamic(currentPayout);
+        document.getElementById('output_' + key).innerText = "Payout: " + formatDynamic(currentPayout);
         document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
         let actualTimeSec = getActualTime(key) / 1000;
         let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
-        document.getElementById('ops_' + key).innerText = formatDynamic(itemOPS) + "/s";
+        let opsString = formatDynamic(itemOPS) + "/s";
         
         if (upg.automated) totalOPS += itemOPS;
         
@@ -564,12 +564,6 @@ function updateUI() {
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
         let iconBtn = document.getElementById('icon_' + key);
-        
-        let actualTimeSec = getActualTime(key) / 1000;
-        let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
-        let opsString = formatDynamic(itemOPS) + "/s";
-        
-        if (upg.automated) totalOPS += itemOPS;
         
         if (upg.count === 0n) {
             bar.style.backgroundColor = "#0f172a";
@@ -675,7 +669,6 @@ function updateUI() {
         }
     });
 }
-
 initUI();
 loadGame();
 updateUI();
