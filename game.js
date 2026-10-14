@@ -226,25 +226,29 @@ function calculatePayout(key) {
     if (upg.count === 0n) return 0n;
 
     let multiplier = getMilestoneMultiplier(upg.count);
-    
-    // THE NERF: 1 Biomass now equals +5% Output, not a full x1 multiplier.
-    // Base is 100%. 100 Biomass = 100% + (100 * 5%) = 600% (or x6).
+
     let biomassBonus = 100n + (state.biomassMultiplier * 5n);
     multiplier = (multiplier * biomassBonus) / 100n;
-    
+
     let storyBonus = 100n + (BigInt(state.storyIndex) * 25n);
     multiplier = (multiplier * storyBonus) / 100n;
-    
+
     cashUpgrades.forEach(u => {
         if (state.purchasedUpgrades.includes(u.id)) {
             if (u.target === key || u.target === "all") multiplier *= u.multiplier;
         }
     });
-    
+
     if (state.unlockedSkills.includes("heat_efficiency")) multiplier *= 2n;
     if (state.unlockedSkills.includes("biomass_boost")) multiplier *= 5n;
+
+    // New late-game skill multipliers
+    if (state.unlockedSkills.includes("deep_sea_synergy")) multiplier *= 10n;
+    if (state.unlockedSkills.includes("core_ignition")) multiplier *= 50n;
+    if (state.unlockedSkills.includes("abyssal_singularity")) multiplier *= 250n;
+
     if (surgeActive) multiplier *= 3n; 
-    
+
     return upg.count * conf.baseOutput * multiplier;
 }
 
