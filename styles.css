@@ -248,23 +248,41 @@ body {
     border: 1px solid rgba(0, 240, 255, 0.2);
 }
 
-/* Update Row Height to Match Icon */
 .progress-row {
     display: flex;
     gap: 12px;
     margin-bottom: 12px;
-    height: 52px;
+    height: 78px; /* Increased height to accommodate the badge */
+    align-items: stretch;
+}
+
+.icon-container {
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.level-badge {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    white-space: nowrap;
 }
 
 .progress-bar {
     flex-grow: 1;
-    height: 100%; /* This forces the bar to expand */
+    height: 100%;
     background: #0f172a;
     border-radius: 8px;
     position: relative;
     overflow: hidden;
-    cursor: pointer;
     border: 1px solid rgba(255,255,255,0.05);
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 }
