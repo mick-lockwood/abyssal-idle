@@ -226,63 +226,17 @@ body {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* Header & Stats Layout */
-.business-header {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
-.business-header strong {
-    font-size: 1.15rem;
-    letter-spacing: 0.5px;
-}
-
+/* Card Structural Layout */
 .title-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 12px;
 }
 
-.stats-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(0,0,0,0.2);
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.output-text { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
-.milestone-text { color: #f59e0b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
-
-.level-badge {
-    background: rgba(0, 240, 255, 0.1);
-    color: var(--accent);
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    border: 1px solid rgba(0, 240, 255, 0.2);
-}
-
-/* Progress Row Layout */
-.progress-row {
-    display: flex;
-    gap: 12px;
-    height: 64px; /* Matches the new circle height */
-    align-items: stretch;
-}
-
-.icon-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px;
-    flex-shrink: 0;
+.title-row strong {
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
 }
 
 .level-badge {
@@ -296,6 +250,40 @@ body {
     white-space: nowrap;
 }
 
+.card-body {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.2);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.output-text { color: var(--accent); font-size: 0.9rem; font-weight: bold; }
+.milestone-text { color: #f59e0b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
+
+.progress-row {
+    display: flex;
+    gap: 10px;
+    height: 52px;
+    align-items: stretch;
+}
+
+/* Passive Progress Bar */
 .progress-bar {
     flex-grow: 1;
     height: 100%;
@@ -306,8 +294,6 @@ body {
     border: 1px solid rgba(255,255,255,0.05);
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 }
-
-.progress-bar:active { transform: scale(0.98); }
 
 /* Restoring the Green Stripes */
 .progress-fill {
@@ -321,7 +307,6 @@ body {
 }
 
 .progress-bar:not([style*="cursor: not-allowed"]) .progress-fill {
-    /* Layers the white stripes directly on top of the green gradient */
     background: 
         linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent),
         linear-gradient(90deg, #059669, #10b981);
@@ -346,6 +331,29 @@ body {
     pointer-events: none;
     z-index: 2;
 }
+
+/* Giant Circle Icon */
+.icon-btn {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 0, 0, 0.6));
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 20px;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.icon-btn svg { width: 100%; height: 100%; }
+.icon-btn:hover:not(:disabled) { background: var(--accent); color: #000; box-shadow: var(--glow); transform: translateY(-2px); }
+.icon-btn:active:not(:disabled) { transform: scale(0.92); }
+.icon-btn:disabled { cursor: not-allowed; }
 
 .buy-btn, .manager-buy-btn, .upgrade-buy-btn {
     background: rgba(0,0,0,0.4);
@@ -599,26 +607,3 @@ button:disabled {
     border-color: var(--danger);
     color: var(--danger);
 }
-
-/* Ergonomic Circle Icon */
-.icon-btn {
-    width: 64px;
-    height: 64px;
-    flex-shrink: 0;
-    border-radius: 50%; /* Forces the perfect circle */
-    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 0, 0, 0.6));
-    border: 2px solid var(--accent);
-    color: var(--accent);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 12px;
-    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-.icon-btn svg { width: 100%; height: 100%; }
-.icon-btn:hover:not(:disabled) { background: var(--accent); color: #000; box-shadow: var(--glow); transform: translateY(-2px); }
-.icon-btn:active:not(:disabled) { transform: scale(0.92); }
-.icon-btn:disabled { cursor: not-allowed; }
