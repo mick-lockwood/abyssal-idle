@@ -2,27 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Abyssal Idle</title>
+    <!-- Legit Game Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-layout">
         
-        <div class="nav-tabs">
-            <button id="btn_tab_store" class="tab-btn active" onclick="switchTab('tab_store')">Oasis</button>
-            <button id="btn_tab_upgrades" class="tab-btn" onclick="switchTab('tab_upgrades')">Upgrades</button>
-            <button id="btn_tab_managers" class="tab-btn" onclick="switchTab('tab_managers')">Managers</button>
-            <button id="btn_tab_evolution" class="tab-btn" onclick="switchTab('tab_evolution')">Mutations</button>
-            <button id="btn_tab_story" class="tab-btn" onclick="switchTab('tab_story')">Logs</button>
-        </div>
-
-        <div id="tab_store" class="panel tab-content active-tab">
+        <!-- Fixed Header Area -->
+        <header class="app-header">
             <div class="currencies">
-                <h1 id="heatDisplay">Heat: 0</h1>
-                <h3 id="opsDisplay" style="color: var(--success); margin-top: 5px; margin-bottom: 15px;">Overall Output: 0.0/s</h3>
-                
-                <!-- Core Temperature Gauge -->
+                <h1 id="heatDisplay" class="mono-text">Heat: 0</h1>
+                <h3 id="opsDisplay" class="ops-text mono-text">Overall Output: 0.0/s</h3>
                 <div class="thermometer-container">
                     <div class="thermometer-fill" id="thermoFill"></div>
                     <span class="thermometer-text" id="thermoText">0.0% Banked</span>
@@ -32,94 +27,115 @@
             <button id="surgeBtn" class="surge-btn" onclick="activateSurge()">
                 Geothermal Surge (Ready)
             </button>
+        </header>
 
-            <div class="buy-controls">
-                <span>Buy Multiplier:</span>
-                <button id="buy_1" class="toggle-btn active-toggle" onclick="setBuyMode('1')">x1</button>
-                <button id="buy_10" class="toggle-btn" onclick="setBuyMode('10')">x10</button>
-                <button id="buy_Next" class="toggle-btn" onclick="setBuyMode('Next')">Next</button>
-                <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">Max</button>
-            </div>
-
-            <div class="store" id="businessStore"></div>
-
-            <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
-                Collapse & Mutate
-            </button>
-        </div>
-
-        <div id="tab_upgrades" class="panel tab-content">
-            <h2>Oasis Upgrades</h2>
-            <div id="upgradeStore"></div>
-        </div>
-
-        <div id="tab_managers" class="panel tab-content">
-            <h2>Management Entities</h2>
-            <div id="managerStore"></div>
-        </div>
-
-        <div id="tab_evolution" class="panel tab-content">
-            <div id="evolutionLocked" class="locked-screen">
-                <h3>Evolution Locked</h3>
-                <p>You must complete your first Collapse & Mutate before accessing the Skill Tree.</p>
-            </div>
+        <!-- Scrollable Content Area -->
+        <main class="app-content">
             
-            <div id="evolutionContent" class="hidden">
-                <h3 id="biomassDisplay">Biomass Multiplier: x1</h3>
-                <h3 id="mutationDisplay">Mutation Points: 0</h3>
-                <hr style="border-color: #1e293b; margin: 20px 0;">
+            <!-- Oasis Tab -->
+            <div id="tab_store" class="panel tab-content active-tab">
+                <div class="buy-controls">
+                    <span>Buy Multiplier:</span>
+                    <button id="buy_1" class="toggle-btn active-toggle" onclick="setBuyMode('1')">x1</button>
+                    <button id="buy_10" class="toggle-btn" onclick="setBuyMode('10')">x10</button>
+                    <button id="buy_Next" class="toggle-btn" onclick="setBuyMode('Next')">Next</button>
+                    <button id="buy_Max" class="toggle-btn" onclick="setBuyMode('Max')">Max</button>
+                </div>
+
+                <div class="store" id="businessStore"></div>
+
+                <button id="prestigeBtn" class="prestige-btn hidden" onclick="prestige()">
+                    Collapse & Mutate
+                </button>
+            </div>
+
+            <!-- Upgrades Tab -->
+            <div id="tab_upgrades" class="panel tab-content">
+                <h2 class="tab-title">Oasis Upgrades</h2>
+                <div id="upgradeStore"></div>
+            </div>
+
+            <!-- Managers Tab -->
+            <div id="tab_managers" class="panel tab-content">
+                <h2 class="tab-title">Management Entities</h2>
+                <div id="managerStore"></div>
+            </div>
+
+            <!-- Mutations Tab -->
+            <div id="tab_evolution" class="panel tab-content">
+                <div id="evolutionLocked" class="locked-screen">
+                    <div class="lock-icon">🔒</div>
+                    <h3>Evolution Locked</h3>
+                    <p>You must complete your first Collapse & Mutate before accessing the Skill Tree.</p>
+                </div>
                 
-                <div class="skill-grid">
-                    <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
-                        <strong>Thermal Efficiency</strong><br>
-                        2x All Outputs<br>
-                        Cost: 2 MP
-                    </button>
-                    <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
-                        <strong>Symbiosis</strong><br>
-                        Bacteria cost -20%<br>
-                        Cost: 2 MP
-                    </button>
-                    <button id="skill_biomass_boost" class="skill-btn" onclick="unlockSkill('biomass_boost')">
-                        <strong>Genetic Density</strong><br>
-                        5x All Outputs<br>
-                        Cost: 5 MP
-                    </button>
-                    <button id="skill_manager_discount" class="skill-btn" onclick="unlockSkill('manager_discount')">
-                        <strong>Neural Links</strong><br>
-                        Managers cost -50%<br>
-                        Cost: 10 MP
-                    </button>
-                    <button id="skill_deep_sea_synergy" class="skill-btn" onclick="unlockSkill('deep_sea_synergy')">
-                        <strong>Deep Sea Synergy</strong><br>
-                        10x All Outputs<br>
-                        Cost: 100 MP
-                    </button>
-                    <button id="skill_core_ignition" class="skill-btn" onclick="unlockSkill('core_ignition')">
-                        <strong>Core Ignition</strong><br>
-                        50x All Outputs<br>
-                        Cost: 1,000 MP
-                    </button>
-                    <button id="skill_abyssal_singularity" class="skill-btn" onclick="unlockSkill('abyssal_singularity')">
-                        <strong>Abyssal Singularity</strong><br>
-                        250x All Outputs<br>
-                        Cost: 15,000 MP
-                    </button>
+                <div id="evolutionContent" class="hidden">
+                    <div class="mutation-header">
+                        <h3 id="biomassDisplay" class="mono-text text-accent">Biomass Multiplier: x1</h3>
+                        <h3 id="mutationDisplay" class="mono-text">Mutation Points: 0</h3>
+                    </div>
+                    
+                    <div class="skill-grid">
+                        <button id="skill_heat_efficiency" class="skill-btn" onclick="unlockSkill('heat_efficiency')">
+                            <strong>Thermal Efficiency</strong><br>
+                            2x All Outputs<br>
+                            <span class="mono-text">Cost: 2 MP</span>
+                        </button>
+                        <button id="skill_cheaper_bacteria" class="skill-btn" onclick="unlockSkill('cheaper_bacteria')">
+                            <strong>Symbiosis</strong><br>
+                            Bacteria cost -20%<br>
+                            <span class="mono-text">Cost: 2 MP</span>
+                        </button>
+                        <button id="skill_biomass_boost" class="skill-btn" onclick="unlockSkill('biomass_boost')">
+                            <strong>Genetic Density</strong><br>
+                            5x All Outputs<br>
+                            <span class="mono-text">Cost: 5 MP</span>
+                        </button>
+                        <button id="skill_manager_discount" class="skill-btn" onclick="unlockSkill('manager_discount')">
+                            <strong>Neural Links</strong><br>
+                            Managers cost -50%<br>
+                            <span class="mono-text">Cost: 10 MP</span>
+                        </button>
+                        <button id="skill_deep_sea_synergy" class="skill-btn" onclick="unlockSkill('deep_sea_synergy')">
+                            <strong>Deep Sea Synergy</strong><br>
+                            10x All Outputs<br>
+                            <span class="mono-text">Cost: 100 MP</span>
+                        </button>
+                        <button id="skill_core_ignition" class="skill-btn" onclick="unlockSkill('core_ignition')">
+                            <strong>Core Ignition</strong><br>
+                            50x All Outputs<br>
+                            <span class="mono-text">Cost: 1,000 MP</span>
+                        </button>
+                        <button id="skill_abyssal_singularity" class="skill-btn" onclick="unlockSkill('abyssal_singularity')">
+                            <strong>Abyssal Singularity</strong><br>
+                            250x All Outputs<br>
+                            <span class="mono-text">Cost: 15,000 MP</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab_story" class="panel tab-content">
-            <h2>Abyssal Logs</h2>
-            <p style="color: #22c55e; font-size: 0.85rem; margin-bottom: 20px;">
-                Every unlocked log provides a global +25% output bonus.
-            </p>
-            <div id="storyLogContainer"></div>
-        </div>
+            <!-- Logs Tab -->
+            <div id="tab_story" class="panel tab-content">
+                <h2 class="tab-title">Abyssal Logs</h2>
+                <div class="log-info-box">
+                    Every unlocked log provides a global +25% output bonus.
+                </div>
+                <div id="storyLogContainer"></div>
+                <button class="hard-reset-btn" onclick="hardReset()">Hard Reset Game</button>
+            </div>
 
-        <!-- Hard Reset Button -->
-        <button class="hard-reset-btn" onclick="hardReset()">Hard Reset Game</button>
+        </main>
 
+        <!-- Fixed Bottom Navigation (App Style) -->
+        <nav class="nav-tabs">
+            <button id="btn_tab_store" class="tab-btn active" onclick="switchTab('tab_store')">Oasis</button>
+            <button id="btn_tab_upgrades" class="tab-btn" onclick="switchTab('tab_upgrades')">Upgrades</button>
+            <button id="btn_tab_managers" class="tab-btn" onclick="switchTab('tab_managers')">Managers</button>
+            <button id="btn_tab_evolution" class="tab-btn" onclick="switchTab('tab_evolution')">Mutations</button>
+            <button id="btn_tab_story" class="tab-btn" onclick="switchTab('tab_story')">Logs</button>
+        </nav>
+        
     </div>
     <script src="game.js"></script>
 </body>
