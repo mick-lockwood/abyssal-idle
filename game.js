@@ -1,12 +1,20 @@
 const entityConfig = {
-    bacteria:  { name: "Chemosynthetic Bacteria", baseCost: 10n, baseOutput: 1n, baseTime: 2000, managerCost: 1000n, managerName: "Bacterial Hive Mind" },
-    sponges:   { name: "Deep Sea Sponges", baseCost: 150n, baseOutput: 10n, baseTime: 4000, managerCost: 15000n, managerName: "Current Filterer" },
-    tubeWorms: { name: "Tube Worm Colony", baseCost: 1000n, baseOutput: 60n, baseTime: 6000, managerCost: 100000n, managerName: "Root Network" },
-    vent:      { name: "Thermal Vent", baseCost: 40000n, baseOutput: 540n, baseTime: 12000, managerCost: 1000000n, managerName: "Pressure Regulator" },
-    chimney:   { name: "Hydrothermal Chimney", baseCost: 500000n, baseOutput: 4000n, baseTime: 24000, managerCost: 10000000n, managerName: "Mineral Excavator" },
-    magma:     { name: "Magma Chamber", baseCost: 1500000n, baseOutput: 12000n, baseTime: 48000, managerCost: 50000000n, managerName: "Core Tapper" },
-    plume:     { name: "Mantle Plume", baseCost: 20000000n, baseOutput: 80000n, baseTime: 96000, managerCost: 500000000n, managerName: "Tectonic Injector" },
-    rift:      { name: "Abyssal Rift", baseCost: 300000000n, baseOutput: 1000000n, baseTime: 192000, managerCost: 10000000000n, managerName: "Planetary AI" }
+    bacteria:  { name: "Chemosynthetic Bacteria", baseCost: 10n, baseOutput: 1n, baseTime: 2000, managerCost: 1000n, managerName: "Bacterial Hive Mind",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><circle cx="9" cy="9" r="4"/><circle cx="15" cy="15" r="4"/><circle cx="15" cy="9" r="3"/></svg>' },
+    sponges:   { name: "Deep Sea Sponges", baseCost: 150n, baseOutput: 10n, baseTime: 4000, managerCost: 15000n, managerName: "Current Filterer",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><circle cx="8" cy="10" r="1"/><circle cx="15" cy="14" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16" cy="9" r="1"/><circle cx="10" cy="16" r="1"/></svg>' },
+    tubeWorms: { name: "Tube Worm Colony", baseCost: 1000n, baseOutput: 60n, baseTime: 6000, managerCost: 100000n, managerName: "Root Network",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M6 22V8a4 4 0 0 1 4-4v0M14 22V6a4 4 0 0 1 4-4v0M10 22V10a4 4 0 0 1 4-4"/></svg>' },
+    vent:      { name: "Thermal Vent", baseCost: 40000n, baseOutput: 540n, baseTime: 12000, managerCost: 1000000n, managerName: "Pressure Regulator",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M2 22h20L16 10H8zM12 10V2M9 5l1-3M15 5l-1-3"/></svg>' },
+    chimney:   { name: "Hydrothermal Chimney", baseCost: 500000n, baseOutput: 4000n, baseTime: 24000, managerCost: 10000000n, managerName: "Mineral Excavator",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M7 22V8h10v14M6 8h12M9 8V3h6v5M12 3v-3M9 1v2M15 1v2"/></svg>' },
+    magma:     { name: "Magma Chamber", baseCost: 1500000n, baseOutput: 12000n, baseTime: 48000, managerCost: 50000000n, managerName: "Core Tapper",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 21a8 8 0 0 0 8-8c0-5-8-11-8-11S4 8 4 13a8 8 0 0 0 8 8z"/></svg>' },
+    plume:     { name: "Mantle Plume", baseCost: 20000000n, baseOutput: 80000n, baseTime: 96000, managerCost: 500000000n, managerName: "Tectonic Injector",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 22C12 18 8 16 8 12C8 8 12 6 12 2M6 22C6 18 2 16 2 12C2 8 6 6 6 2M18 22C18 14 14 16 14 12C14 8 18 6 18 2"/></svg>' },
+    rift:      { name: "Abyssal Rift", baseCost: 300000000n, baseOutput: 1000000n, baseTime: 192000, managerCost: 10000000000n, managerName: "Planetary AI",
+        svg: '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M3 3h18v18H3zM15 3l-6 8h4l-4 10 6-8h-4z"/></svg>' }
 };
 
 const cashUpgrades = [
@@ -87,17 +95,19 @@ function initUI() {
                     <span id="${key}Count" class="level-badge">Lvl 0</span>
                 </div>
                 <div class="progress-row">
+                    <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
+                        ${conf.svg}
+                    </button>
                     <div class="progress-bar" id="bar_${key}" onclick="triggerCycle('${key}', event)">
                         <div class="progress-fill" id="fill_${key}"></div>
-                        <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                        <span class="progress-text" id="time_${key}">Locked</span>
                     </div>
                     <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
                         Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
                     </button>
                 </div>
                 <div class="business-stats">
-                    <span id="output_${key}" class="output-text">Output: 0</span>
-                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
+                    <span id="output_${key}" class="output-text">Payout: 0</span>
                     <span id="milestone_${key}" class="milestone-text">Next Boost: Lvl 25</span>
                 </div>
             </div>
@@ -553,22 +563,38 @@ function updateUI() {
         let fill = document.getElementById('fill_' + key);
         let timeText = document.getElementById('time_' + key);
         let bar = document.getElementById('bar_' + key);
+        let iconBtn = document.getElementById('icon_' + key);
+        
+        let actualTimeSec = getActualTime(key) / 1000;
+        let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
+        let opsString = formatDynamic(itemOPS) + "/s";
+        
+        if (upg.automated) totalOPS += itemOPS;
         
         if (upg.count === 0n) {
             bar.style.backgroundColor = "#0f172a";
             fill.style.width = "0%";
             timeText.innerText = "Locked";
             bar.style.cursor = "not-allowed";
+            
+            iconBtn.disabled = true;
+            iconBtn.style.filter = "grayscale(100%) opacity(0.3)";
         } else if (upg.isRunning) {
             let progressPercent = 100 - ((upg.timeRemaining / (actualTimeSec * 1000)) * 100);
             fill.style.width = progressPercent + "%";
-            timeText.innerText = (upg.timeRemaining / 1000).toFixed(1) + "s";
+            timeText.innerText = `${opsString} (${(upg.timeRemaining / 1000).toFixed(1)}s)`;
             bar.style.cursor = upg.automated ? "default" : "not-allowed";
+            
+            iconBtn.disabled = true;
+            iconBtn.style.filter = "none";
         } else {
             fill.style.width = "0%";
-            timeText.innerText = "Run (" + actualTimeSec.toFixed(1) + "s)";
+            timeText.innerText = `${opsString} (Ready)`;
             bar.style.cursor = "pointer";
             bar.style.backgroundColor = "#1e293b";
+            
+            iconBtn.disabled = false;
+            iconBtn.style.filter = "none";
         }
     });
     
