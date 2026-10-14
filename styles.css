@@ -259,6 +259,7 @@ body {
 
 .progress-bar {
     flex-grow: 1;
+    height: 100%; /* This forces the bar to expand */
     background: #0f172a;
     border-radius: 8px;
     position: relative;
@@ -317,7 +318,12 @@ body {
     min-width: 90px;
 }
 
-.buy-btn { padding: 4px; }
+/* Add this new separate block specifically for the buy button */
+.buy-btn {
+    padding: 4px;
+    height: 100%;
+}
+
 .buy-btn span:last-child { color: var(--accent); }
 
 .buy-btn:hover:not(:disabled), .manager-buy-btn:hover:not(:disabled), .upgrade-buy-btn:hover:not(:disabled) {
