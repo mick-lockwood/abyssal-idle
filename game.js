@@ -90,24 +90,29 @@ function initUI() {
         let conf = entityConfig[key];
         storeHTML += `
             <div class="business-card">
-                <div class="business-header">
-                    <div class="title-row">
-                        <strong>${conf.name}</strong>
-                        <span id="${key}Count" class="level-badge">0/25</span>
-                    </div>
-                    <div class="stats-row">
-                        <span id="output_${key}" class="output-text">Payout: 0</span>
-                        <span id="milestone_${key}" class="milestone-text">Goal: Double Profit</span>
-                    </div>
+                <div class="title-row">
+                    <strong>${conf.name}</strong>
+                    <span id="${key}Count" class="level-badge">0/25</span>
                 </div>
-                <div class="progress-row">
-                    <div class="progress-bar" id="bar_${key}">
-                        <div class="progress-fill" id="fill_${key}"></div>
-                        <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                
+                <div class="card-body">
+                    <div class="card-content">
+                        <div class="stats-row">
+                            <span id="output_${key}" class="output-text">Payout: 0</span>
+                            <span id="milestone_${key}" class="milestone-text">Goal: Double Profit</span>
+                        </div>
+                        
+                        <div class="progress-row">
+                            <div class="progress-bar" id="bar_${key}">
+                                <div class="progress-fill" id="fill_${key}"></div>
+                                <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                            </div>
+                            <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
+                                Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
+                            </button>
+                        </div>
                     </div>
-                    <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
-                        Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
-                    </button>
+                    
                     <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
                         ${conf.svg}
                     </button>
