@@ -89,33 +89,46 @@ function initUI() {
     Object.keys(entityConfig).forEach(key => {
         let conf = entityConfig[key];
         storeHTML += `
-            <div class="business-card">
-                <div class="title-row">
-                    <strong>${conf.name}</strong>
-                    <span id="${key}Count" class="level-badge">0/25</span>
+            <div class="business-card" id="card_${key}">
+                <!-- Locked State Banner -->
+                <div class="locked-state" id="locked_${key}">
+                    <div class="locked-icon">${conf.svg}</div>
+                    <div class="locked-info">
+                        <strong>${conf.name}</strong>
+                        <span class="locked-cost" id="locked_cost_${key}">Cost: ${formatStatic(conf.baseCost)} Heat</span>
+                    </div>
+                    <button class="locked-buy-btn" id="btn_locked_buy_${key}" onclick="buyUpgrade('${key}')">Buy x1</button>
                 </div>
                 
-                <div class="card-body">
-                    <div class="card-content">
-                        <div class="stats-row">
-                            <span id="output_${key}" class="output-text">Payout: 0</span>
-                            <span id="milestone_${key}" class="milestone-text">Goal: Double Profit</span>
-                        </div>
-                        
-                        <div class="progress-row">
-                            <div class="progress-bar" id="bar_${key}">
-                                <div class="progress-fill" id="fill_${key}"></div>
-                                <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
-                            </div>
-                            <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
-                                Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
-                            </button>
-                        </div>
+                <!-- Unlocked Operational Card -->
+                <div class="unlocked-state" id="unlocked_${key}" style="display: none;">
+                    <div class="title-row">
+                        <strong>${conf.name}</strong>
+                        <span id="${key}Count" class="level-badge">0/25</span>
                     </div>
                     
-                    <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
-                        ${conf.svg}
-                    </button>
+                    <div class="card-body">
+                        <div class="card-content">
+                            <div class="stats-row">
+                                <span id="output_${key}" class="output-text">Payout: 0</span>
+                                <span id="milestone_${key}" class="milestone-text">Goal: Double Profit</span>
+                            </div>
+                            
+                            <div class="progress-row">
+                                <div class="progress-bar" id="bar_${key}">
+                                    <div class="progress-fill" id="fill_${key}"></div>
+                                    <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                                </div>
+                                <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
+                                    Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
+                            ${conf.svg}
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -539,24 +552,63 @@ function updateUI() {
         let upg = state.upgrades[key];
         let conf = entityConfig[key];
         let bulkInfo = getBulkCostInfo(key);
-        
-        document.getElementById('cost_' + key).innerText = formatStatic(bulkInfo.cost);
-        document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
-        
-        let nextMs = getNextMilestone(upg.count);
-        document.getElementById(key + 'Count').innerText = `${upg.count}/${nextMs}`;
-        
-        let currentPayout = calculatePayout(key);
-        document.getElementById('output_' + key).innerText = "Payout: " + formatDynamic(currentPayout);
-        document.getElementById('milestone_' + key).innerText = getNextMilestoneEffect(upg.count);
-        document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
-        
-        let actualTimeSec = getActualTime(key) / 1000;
-        let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
-        let opsString = formatDynamic(itemOPS) + "/s";
-        
-        if (upg.automated) totalOPS += itemOPS;
-        
+
+        let lockedState = document.getElementById('locked_' + key);
+        let unlockedState = document.getElementById('unlocked_' + key);
+
+        if (upg.count === 0n) {
+            // RENDER LOCKED STATE
+            lockedState.style.display = 'flex';
+            unlockedState.style.display = 'none';
+
+            let lockedBtn = document.getElementById('btn_locked_buy_' + key);
+            document.getElementById('locked_cost_' + key).innerText = `Cost: ${formatStatic(bulkInfo.cost)} Heat`;
+            lockedBtn.disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
+            lockedBtn.innerHTML = `Buy x${bulkInfo.count > 0n ? bulkInfo.count : 1n}`;
+
+        } else {
+            // RENDER UNLOCKED STATE
+            lockedState.style.display = 'none';
+            unlockedState.style.display = 'block';
+
+            document.getElementById('cost_' + key).innerText = formatStatic(bulkInfo.cost);
+            document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
+            
+            let nextMs = getNextMilestone(upg.count);
+            document.getElementById(key + 'Count').innerText = `${upg.count}/${nextMs}`;
+            
+            let currentPayout = calculatePayout(key);
+            document.getElementById('output_' + key).innerText = "Payout: " + formatDynamic(currentPayout);
+            document.getElementById('milestone_' + key).innerText = getNextMilestoneEffect(upg.count);
+            document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
+            
+            let actualTimeSec = getActualTime(key) / 1000;
+            let itemOPS = upg.count > 0n ? (Number(currentPayout) / actualTimeSec) : 0;
+            let opsString = formatDynamic(itemOPS) + "/s";
+            
+            if (upg.automated) totalOPS += itemOPS;
+            
+            let fill = document.getElementById('fill_' + key);
+            let timeText = document.getElementById('time_' + key);
+            let bar = document.getElementById('bar_' + key);
+            let iconBtn = document.getElementById('icon_' + key);
+            
+            if (upg.isRunning) {
+                let progressPercent = 100 - ((upg.timeRemaining / (actualTimeSec * 1000)) * 100);
+                fill.style.width = progressPercent + "%";
+                timeText.innerText = `${opsString} (${(upg.timeRemaining / 1000).toFixed(1)}s)`;
+                iconBtn.disabled = true;
+                iconBtn.style.filter = "none";
+            } else {
+                fill.style.width = "0%";
+                timeText.innerText = `${opsString} (Ready)`;
+                bar.style.backgroundColor = "#1e293b";
+                iconBtn.disabled = false;
+                iconBtn.style.filter = "none";
+            }
+        }
+
+        // Managers logic (Must run outside the locked toggle to keep the Managers tab working)
         let managerCard = document.getElementById('managerCard_' + key);
         if (upg.automated) {
             managerCard.style.display = 'none';
@@ -567,34 +619,6 @@ function updateUI() {
             
             document.getElementById('manCost_' + key).innerText = `Cost: ${formatStatic(actualManagerCost)} Heat`;
             document.getElementById('btn_manager_' + key).disabled = state.heat < actualManagerCost;
-        }
-
-        let fill = document.getElementById('fill_' + key);
-        let timeText = document.getElementById('time_' + key);
-        let bar = document.getElementById('bar_' + key);
-        let iconBtn = document.getElementById('icon_' + key);
-        
-        if (upg.count === 0n) {
-            bar.style.backgroundColor = "#0f172a";
-            fill.style.width = "0%";
-            timeText.innerText = "Locked";
-            
-            iconBtn.disabled = true;
-            iconBtn.style.filter = "grayscale(100%) opacity(0.3)";
-        } else if (upg.isRunning) {
-            let progressPercent = 100 - ((upg.timeRemaining / (actualTimeSec * 1000)) * 100);
-            fill.style.width = progressPercent + "%";
-            timeText.innerText = `${opsString} (${(upg.timeRemaining / 1000).toFixed(1)}s)`;
-            
-            iconBtn.disabled = true;
-            iconBtn.style.filter = "none";
-        } else {
-            fill.style.width = "0%";
-            timeText.innerText = `${opsString} (Ready)`;
-            bar.style.backgroundColor = "#1e293b";
-            
-            iconBtn.disabled = false;
-            iconBtn.style.filter = "none";
         }
     });
     
