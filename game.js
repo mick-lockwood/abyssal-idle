@@ -10,21 +10,37 @@ const entityConfig = {
 };
 
 const cashUpgrades = [
+    // Early Game
     { id: "upg_bac1", name: "Thermal Adaptation", desc: "Bacteria output x3", cost: 10000n, target: "bacteria", multiplier: 3n },
     { id: "upg_spo1", name: "Porous Structures", desc: "Sponges output x3", cost: 50000n, target: "sponges", multiplier: 3n },
     { id: "upg_tub1", name: "Deep Roots", desc: "Tube Worms output x3", cost: 500000n, target: "tubeWorms", multiplier: 3n },
     { id: "upg_ven1", name: "Reinforced Walls", desc: "Thermal Vent output x3", cost: 5000000n, target: "vent", multiplier: 3n },
     { id: "upg_all1", name: "Geothermal Infusion", desc: "All outputs x2", cost: 25000000n, target: "all", multiplier: 2n },
+    
+    // Mid Game
     { id: "upg_chi1", name: "Rapid Extraction", desc: "Chimney output x3", cost: 100000000n, target: "chimney", multiplier: 3n },
     { id: "upg_mag1", name: "Superheated Core", desc: "Magma Chamber output x4", cost: 500000000n, target: "magma", multiplier: 4n },
-    { id: "upg_all2", name: "Planetary Sync", desc: "All outputs x3", cost: 5000000000n, target: "all", multiplier: 3n }
+    { id: "upg_all2", name: "Planetary Sync", desc: "All outputs x3", cost: 5000000000n, target: "all", multiplier: 3n },
+    
+    // Late Game (Trillions)
+    { id: "upg_plu1", name: "Mantle Piercing", desc: "Mantle Plume output x5", cost: 1000000000000n, target: "plume", multiplier: 5n },
+    { id: "upg_rif1", name: "Tectonic Shearing", desc: "Abyssal Rift output x5", cost: 25000000000000n, target: "rift", multiplier: 5n },
+    { id: "upg_all3", name: "Abyssal Mastery", desc: "All outputs x5", cost: 500000000000000n, target: "all", multiplier: 5n },
+    
+    // End Game (Quadrillions & Quintillions)
+    { id: "upg_bac2", name: "Sentient Bacteria", desc: "Bacteria output x100", cost: 1000000000000000n, target: "bacteria", multiplier: 100n },
+    { id: "upg_all4", name: "Core Collapse", desc: "All outputs x10", cost: 50000000000000000n, target: "all", multiplier: 10n },
+    { id: "upg_all5", name: "Event Horizon", desc: "All outputs x10", cost: 10000000000000000000n, target: "all", multiplier: 10n }
 ];
 
 const skillNodes = {
     "heat_efficiency": { cost: 2n, requires: [] },
     "cheaper_bacteria": { cost: 2n, requires: [] },
     "biomass_boost": { cost: 5n, requires: ["heat_efficiency"] },
-    "manager_discount": { cost: 10n, requires: [] }
+    "manager_discount": { cost: 10n, requires: [] },
+    "deep_sea_synergy": { cost: 100n, requires: ["biomass_boost"] }, // Costs 100 MP
+    "core_ignition": { cost: 1000n, requires: ["deep_sea_synergy"] }, // Costs 1,000 MP
+    "abyssal_singularity": { cost: 15000n, requires: ["core_ignition"] } // Costs 15,000 MP
 };
 
 let state = {
@@ -204,22 +220,17 @@ function getActualTime(key) {
     return Math.max(50, Math.floor(conf.baseTime / divs));
 }
 
-function getMilestoneMultiplier(level) {
-    let mult = 1n;
-    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n, 400n, 500n];
-    thresholds.forEach(t => {
-        if (level >= t) mult *= 2n;
-    });
-    return mult;
-}
-
 function calculatePayout(key) {
     let upg = state.upgrades[key];
     let conf = entityConfig[key];
     if (upg.count === 0n) return 0n;
 
     let multiplier = getMilestoneMultiplier(upg.count);
-    multiplier *= state.biomassMultiplier;
+    
+    // THE NERF: 1 Biomass now equals +5% Output, not a full x1 multiplier.
+    // Base is 100%. 100 Biomass = 100% + (100 * 5%) = 600% (or x6).
+    let biomassBonus = 100n + (state.biomassMultiplier * 5n);
+    multiplier = (multiplier * biomassBonus) / 100n;
     
     let storyBonus = 100n + (BigInt(state.storyIndex) * 25n);
     multiplier = (multiplier * storyBonus) / 100n;
@@ -469,17 +480,35 @@ function hardReset() {
     }
 }
 
+// Dynamically spaces out milestones as you get deeper into the game
+function getNextMilestone(currentLevel) {
+    if (currentLevel < 100n) return ((currentLevel / 25n) + 1n) * 25n;      // Every 25 levels
+    if (currentLevel < 500n) return ((currentLevel / 50n) + 1n) * 50n;      // Every 50 levels
+    if (currentLevel < 3000n) return ((currentLevel / 100n) + 1n) * 100n;   // Every 100 levels
+    return ((currentLevel / 250n) + 1n) * 250n;                             // Every 250 levels forever
+}
+
+// Loops through all passed milestones and compounds the 2x bonus
+function getMilestoneMultiplier(level) {
+    let mult = 1n;
+    let current = 25n;
+    while(current <= level) {
+        mult *= 2n;
+        if (current < 100n) current += 25n;
+        else if (current < 500n) current += 50n;
+        else if (current < 3000n) current += 100n;
+        else current += 250n;
+    }
+    return mult;
+}
+
 function getNextMilestoneText(currentLevel) {
-    const thresholds = [25n, 50n, 100n, 150n, 200n, 250n, 300n, 400n, 500n];
-    let next = thresholds.find(m => m > currentLevel);
-    
-    if (!next) return "Max Boosts Reached";
+    let next = getNextMilestone(currentLevel);
     if ([50n, 100n, 200n].includes(next)) return `Next Boost: Lvl ${next} (Speed x2 & Output x2)`;
     return `Next Boost: Lvl ${next} (Output x2)`;
 }
 
 // --- Dynamic Core UI Loop ---
-
 function updateUI() {
     document.getElementById('heatDisplay').innerText = "Heat: " + formatDynamic(state.heat);
     
