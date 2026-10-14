@@ -92,15 +92,17 @@ function initUI() {
             <div class="business-card">
                 <div class="business-header">
                     <strong>${conf.name}</strong>
-                    <span id="${key}Count" class="level-badge">Lvl 0</span>
                 </div>
                 <div class="progress-row">
-                    <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
-                        ${conf.svg}
-                    </button>
-                    <div class="progress-bar" id="bar_${key}" onclick="triggerCycle('${key}', event)">
+                    <div class="progress-bar" id="bar_${key}">
                         <div class="progress-fill" id="fill_${key}"></div>
-                        <span class="progress-text" id="time_${key}">Locked</span>
+                        <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
+                    </div>
+                    <div class="icon-container">
+                        <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
+                            ${conf.svg}
+                        </button>
+                        <span id="${key}Count" class="level-badge">0/25</span>
                     </div>
                     <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
                         Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
@@ -108,7 +110,8 @@ function initUI() {
                 </div>
                 <div class="business-stats">
                     <span id="output_${key}" class="output-text">Payout: 0</span>
-                    <span id="milestone_${key}" class="milestone-text">Next Boost: Lvl 25</span>
+                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
+                    <span id="milestone_${key}" class="milestone-text">Next Boost: Output x2</span>
                 </div>
             </div>
         `;
@@ -516,10 +519,10 @@ function getMilestoneMultiplier(level) {
     return mult;
 }
 
-function getNextMilestoneText(currentLevel) {
+function getNextMilestoneEffect(currentLevel) {
     let next = getNextMilestone(currentLevel);
-    if ([50n, 100n, 200n].includes(next)) return `Next Boost: Lvl ${next} (Speed x2 & Output x2)`;
-    return `Next Boost: Lvl ${next} (Output x2)`;
+    if ([50n, 100n, 200n].includes(next)) return `Next Boost: Speed x2 & Output x2`;
+    return `Next Boost: Output x2`;
 }
 
 // --- Dynamic Core UI Loop ---
@@ -535,11 +538,13 @@ function updateUI() {
         
         document.getElementById('cost_' + key).innerText = formatStatic(bulkInfo.cost);
         document.getElementById('qty_' + key).innerText = bulkInfo.count > 0n ? `x${bulkInfo.count}` : `x1`;
-        document.getElementById(key + 'Count').innerText = "Lvl " + upg.count.toString();
+        
+        let nextMs = getNextMilestone(upg.count);
+        document.getElementById(key + 'Count').innerText = `${upg.count}/${nextMs}`;
         
         let currentPayout = calculatePayout(key);
         document.getElementById('output_' + key).innerText = "Payout: " + formatDynamic(currentPayout);
-        document.getElementById('milestone_' + key).innerText = getNextMilestoneText(upg.count);
+        document.getElementById('milestone_' + key).innerText = getNextMilestoneEffect(upg.count);
         document.getElementById('btn_' + key).disabled = state.heat < bulkInfo.cost || bulkInfo.count === 0n;
         
         let actualTimeSec = getActualTime(key) / 1000;
@@ -569,7 +574,6 @@ function updateUI() {
             bar.style.backgroundColor = "#0f172a";
             fill.style.width = "0%";
             timeText.innerText = "Locked";
-            bar.style.cursor = "not-allowed";
             
             iconBtn.disabled = true;
             iconBtn.style.filter = "grayscale(100%) opacity(0.3)";
@@ -577,14 +581,12 @@ function updateUI() {
             let progressPercent = 100 - ((upg.timeRemaining / (actualTimeSec * 1000)) * 100);
             fill.style.width = progressPercent + "%";
             timeText.innerText = `${opsString} (${(upg.timeRemaining / 1000).toFixed(1)}s)`;
-            bar.style.cursor = upg.automated ? "default" : "not-allowed";
             
             iconBtn.disabled = true;
             iconBtn.style.filter = "none";
         } else {
             fill.style.width = "0%";
             timeText.innerText = `${opsString} (Ready)`;
-            bar.style.cursor = "pointer";
             bar.style.backgroundColor = "#1e293b";
             
             iconBtn.disabled = false;
