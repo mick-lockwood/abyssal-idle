@@ -91,27 +91,26 @@ function initUI() {
         storeHTML += `
             <div class="business-card">
                 <div class="business-header">
-                    <strong>${conf.name}</strong>
+                    <div class="title-row">
+                        <strong>${conf.name}</strong>
+                        <span id="${key}Count" class="level-badge">0/25</span>
+                    </div>
+                    <div class="stats-row">
+                        <span id="output_${key}" class="output-text">Payout: 0</span>
+                        <span id="milestone_${key}" class="milestone-text">Goal: Double Profit</span>
+                    </div>
                 </div>
                 <div class="progress-row">
                     <div class="progress-bar" id="bar_${key}">
                         <div class="progress-fill" id="fill_${key}"></div>
                         <span class="progress-text" id="time_${key}">${(conf.baseTime/1000).toFixed(1)}s</span>
                     </div>
-                    <div class="icon-container">
-                        <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
-                            ${conf.svg}
-                        </button>
-                        <span id="${key}Count" class="level-badge">0/25</span>
-                    </div>
                     <button id="btn_${key}" class="buy-btn" onclick="buyUpgrade('${key}')">
                         Buy <span id="qty_${key}">x1</span><br><span id="cost_${key}">${formatStatic(conf.baseCost)}</span>
                     </button>
-                </div>
-                <div class="business-stats">
-                    <span id="output_${key}" class="output-text">Payout: 0</span>
-                    <span id="ops_${key}" style="color: var(--success); font-size: 0.8rem; font-weight: bold;">0.0/s</span>
-                    <span id="milestone_${key}" class="milestone-text">Next Boost: Output x2</span>
+                    <button class="icon-btn" id="icon_${key}" onclick="triggerCycle('${key}', event)">
+                        ${conf.svg}
+                    </button>
                 </div>
             </div>
         `;
@@ -521,8 +520,8 @@ function getMilestoneMultiplier(level) {
 
 function getNextMilestoneEffect(currentLevel) {
     let next = getNextMilestone(currentLevel);
-    if ([50n, 100n, 200n].includes(next)) return `Next Boost: Speed x2 & Output x2`;
-    return `Next Boost: Output x2`;
+    if ([50n, 100n, 200n].includes(next)) return `Goal: Double Speed & Profit`;
+    return `Goal: Double Profit`;
 }
 
 // --- Dynamic Core UI Loop ---
