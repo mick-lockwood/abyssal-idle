@@ -21,17 +21,18 @@
 body {
     margin: 0;
     padding: 0;
+    width: 100vw; /* Fixes iPhone horizontal shift */
+    overflow-x: hidden; /* Locks the viewport */
     background-color: var(--bg-colour);
     background-image: 
         radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 50% 100%, rgba(244, 63, 94, 0.05) 0%, transparent 50%);
     color: var(--text-main);
     font-family: 'Rajdhani', system-ui, sans-serif;
-    overflow: hidden; /* App-like layout */
-    touch-action: manipulation; /* Kills iPhone double-tap zoom */
+    overflow: hidden; 
+    touch-action: manipulation; 
     user-select: none;
 }
-
 .mono-text {
     font-family: 'Share Tech Mono', monospace;
 }
@@ -40,8 +41,9 @@ body {
 .app-layout {
     display: flex;
     flex-direction: column;
+    width: 100%; /* Ensures it respects the body wrapper constraints */
     height: 100vh;
-    height: 100dvh; /* Dynamic viewport for modern iOS */
+    height: 100dvh; 
     max-width: 800px;
     margin: 0 auto;
     position: relative;
@@ -246,11 +248,13 @@ body {
     border: 1px solid rgba(0, 240, 255, 0.2);
 }
 
+/* Update Row Height to Match Icon */
 .progress-row {
     display: flex;
     gap: 12px;
     margin-bottom: 12px;
-    height: 48px;
+    height: 52px;
+    align-items: center;
 }
 
 .progress-bar {
@@ -546,4 +550,42 @@ button:disabled {
     background: rgba(244, 63, 94, 0.1);
     border-color: var(--danger);
     color: var(--danger);
+}
+
+/* Icon Buttons */
+.icon-btn {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 0, 0, 0.6));
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    color: var(--accent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 10px;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.icon-btn svg {
+    width: 100%;
+    height: 100%;
+}
+
+.icon-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: #000;
+    box-shadow: var(--glow);
+    transform: translateY(-2px);
+}
+
+.icon-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.icon-btn:disabled {
+    cursor: not-allowed;
 }
