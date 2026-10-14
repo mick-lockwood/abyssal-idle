@@ -96,6 +96,7 @@ body {
 
 .thermometer-text {
     position: absolute;
+    left: 0;
     width: 100%;
     text-align: center;
     top: 50%;
@@ -253,13 +254,14 @@ body {
 .card-body {
     display: flex;
     gap: 15px;
-    align-items: center;
+    align-items: flex-start; /* Prevents flexbox from shifting items vertically */
 }
 
 .card-content {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    justify-content: space-between;
+    height: 90px; /* Locked to match icon height exactly */
     flex-grow: 1;
 }
 
@@ -268,7 +270,8 @@ body {
     justify-content: space-between;
     align-items: center;
     background: rgba(0,0,0,0.2);
-    padding: 8px 10px;
+    height: 30px; /* Set exact height for mathematical alignment */
+    padding: 0 10px;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.05);
 }
@@ -279,7 +282,7 @@ body {
 .progress-row {
     display: flex;
     gap: 10px;
-    height: 52px;
+    height: 52px; /* Set exact height (30 + 52 + 8px flex gap = 90px) */
     align-items: stretch;
 }
 
@@ -348,6 +351,7 @@ body {
     transition: all 0.2s ease;
     padding: 20px;
     box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0, 0, 0, 0.5);
+    margin: 0; /* Ensures no stray margins push the circle down */
 }
 
 .icon-btn svg { width: 100%; height: 100%; }
@@ -439,8 +443,11 @@ body {
     background: rgba(0,0,0,0.2) !important;
     border-color: rgba(244, 63, 94, 0.3) !important;
     color: rgba(244, 63, 94, 0.5) !important;
-    cursor: not-allowed;
-    animation: none;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    animation: none !important;
+    transform: none !important;
+    pointer-events: none; /* Completely blocks hover states */
 }
 
 /* Bottom Navigation Tabs */
