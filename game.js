@@ -44,7 +44,7 @@ const skillNodes = {
 };
 
 let state = {
-    saveVersion: 5, 
+    saveVersion: 6, 
     heat: 0n,
     totalHeatEarned: 0n,
     totalBiomassClaimed: 0n,
